@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Terms of Service — Pixora Studio</title>
+<meta name="description" content="Pixora Studio Terms of Service: Open source, dual-licensed under MIT and Apache-2.0. Free for personal and commercial creative use.">
+<link rel="icon" type="image/png" href="assets/logo.png">
+<style>
+  :root {
+    --bg: #07090d;
+    --surface: #0d1117;
+    --card: #12161e;
+    --border: #232a35;
+    --border-accent: rgba(47, 123, 245, 0.4);
+    --text: #e8ecf2;
+    --muted: #98a2b3;
+    --brand: #2f7bf5;
+    --brand-soft: #6fa4ff;
+    --purple: #8b5cf6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.7 "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    overflow-x: hidden;
+  }
+  a { color: var(--brand-soft); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+
+  header.site {
+    position: sticky; top: 0; z-index: 1000;
+    background: rgba(7, 9, 13, .92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  header.site .wrap {
+    display: flex; align-items: center; justify-content: space-between; height: 64px;
+  }
+  .brand-group {
+    display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: inherit;
+  }
+  .brand-group:hover { text-decoration: none; }
+  .brand-group img { height: 36px; width: 36px; border-radius: 8px; flex-shrink: 0; }
+  .brand-group .name { font-weight: 700; font-size: 18px; letter-spacing: .2px; }
+
+  nav a { color: var(--muted); font-size: 14.5px; transition: color .15s; }
+  nav a:hover { color: var(--text); text-decoration: none; }
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px;
+    background: var(--card); border: 1px solid var(--border); color: var(--text); font-size: 14px; font-weight: 600;
+  }
+  .btn-back:hover { border-color: var(--brand); color: #fff; text-decoration: none; }
+
+  .policy-header {
+    padding: 60px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .badge {
+    display: inline-block; background: rgba(139, 92, 246, .15); border: 1px solid rgba(139, 92, 246, .35);
+    color: var(--purple); padding: 4px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 700; margin-bottom: 14px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  h1 { font-size: clamp(32px, 5vw, 44px); font-weight: 800; letter-spacing: -.5px; margin-bottom: 12px; }
+  .meta { color: var(--muted); font-size: 14.5px; }
+
+  .policy-content section { margin-bottom: 36px; }
+  .policy-content h2 { font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+  .policy-content p { color: var(--muted); margin-bottom: 14px; font-size: 15.5px; }
+  .policy-content ul { color: var(--muted); padding-left: 24px; margin-bottom: 14px; font-size: 15px; }
+  .policy-content li { margin-bottom: 8px; }
+  .policy-content b { color: var(--text); }
+
+  .callout {
+    background: rgba(139, 92, 246, .08); border: 1px solid rgba(139, 92, 246, .25); border-radius: 12px;
+    padding: 20px; margin: 24px 0;
+  }
+  .callout b { color: var(--brand-soft); display: block; margin-bottom: 6px; font-size: 16px; }
+
+  footer.site { border-top: 1px solid var(--border); padding: 40px 0; color: var(--muted); font-size: 13.5px; margin-top: 60px; }
+  footer.site .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a href="index.html" class="brand-group">
+      <img src="assets/logo.png" alt="Pixora Studio logo">
+      <span class="name">Pixora Studio</span>
+    </a>
+    <nav>
+      <a href="index.html" class="btn-back">← Back to Home</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="policy-header">
+    <span class="badge">Open Source · Free Software</span>
+    <h1>Terms of Service</h1>
+    <p class="meta">Published by <b>IT Amadersomaj Inc.</b> · Effective Date: October 25, 2026</p>
+  </div>
+
+  <div class="policy-content">
+    <section>
+      <h2>1. Introduction &amp; Acceptance</h2>
+      <p>Welcome to <b>Pixora Studio</b>, a professional photo and graphics editor published by IT Amadersomaj Inc. By downloading, compiling, installing, running, or distributing Pixora Studio, you agree to be bound by these Terms of Service and the applicable open-source license agreements.</p>
+    </section>
+
+    <section>
+      <h2>2. Open Source Dual Licensing</h2>
+      <p>Pixora Studio is free and open-source software. The source code, assets, and binaries are dual-licensed under:</p>
+      <ul>
+        <li><b>The MIT License</b> (Expat), and</li>
+        <li><b>The Apache License, Version 2.0</b>.</li>
+      </ul>
+      <p>You may choose either license at your option. For the full legal text of these licenses, please consult the <code>LICENSE-MIT</code> and <code>LICENSE-APACHE</code> files in our GitHub repository.</p>
+    </section>
+
+    <section>
+      <h2>3. Permitted Creative &amp; Commercial Use</h2>
+      <div class="callout">
+        <b>Free for all personal, educational, and commercial purposes.</b>
+        You are permitted to use Pixora Studio to create, edit, modify, and produce graphics, photographs, illustrations, and media for any personal, commercial, freelance, or enterprise project without paying royalties, subscription fees, or license commissions.
+      </div>
+    </section>
+
+    <section>
+      <h2>4. User Content &amp; Intellectual Property Ownership</h2>
+      <p><b>You retain 100% ownership and copyright over everything you create using Pixora Studio.</b></p>
+      <ul>
+        <li>IT Amadersomaj Inc. claims no intellectual property rights, ownership, or license in your photographs, PSD documents, artwork, or exports.</li>
+        <li>Pixora Studio does not inspect, transmit, or hold any claim to user-created media.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Trademark &amp; Third-Party Disclaimers</h2>
+      <ul>
+        <li><b>Adobe &amp; Photoshop:</b> Photoshop, PSD, PSB, and Adobe are registered trademarks of Adobe Systems Inc. in the United States and other countries. Pixora Studio is an independent, clean-room open-source application and is <b>not</b> affiliated with, sponsored by, or endorsed by Adobe Systems Inc.</li>
+        <li><b>Pixora Studio:</b> Pixora Studio and the Pixora logo are trademarks and intellectual property of IT Amadersomaj Inc.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>6. Disclaimer of Warranty</h2>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, PIXORA STUDIO IS PROVIDED <b>"AS IS" AND "AS AVAILABLE"</b>, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.</p>
+      <p>The developers and publisher make no guarantee that the application will be uninterrupted, error-free, or compatible with every hardware and file format configuration.</p>
+    </section>
+
+    <section>
+      <h2>7. Limitation of Liability</h2>
+      <p>IN NO EVENT SHALL IT AMADERSOMAJ INC., ITS CONTRIBUTORS, OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, LOSS OF DATA, CORRUPTION OF FILES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+    </section>
+
+    <section>
+      <h2>8. Changes to These Terms</h2>
+      <p>We may periodically update these Terms to reflect technical improvements, legal compliance, or new software capabilities. Updates will be published directly to this page on our GitHub repository.</p>
+    </section>
+
+    <section>
+      <h2>9. Contact &amp; Governance</h2>
+      <p>For inquiries, contributions, or legal notices, please reach out via GitHub:</p>
+      <p><b>Organization:</b> IT Amadersomaj Inc.<br>
+         <b>Repository:</b> <a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor">Pixora-Studio-Professional-Photo-Editor</a><br>
+         <b>Issues &amp; Support:</b> <a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/issues">GitHub Issues</a></p>
+    </section>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© 2026 IT Amadersomaj Inc. All rights reserved.</span>
+    <span>
+      <a href="terms.html">Terms of Service</a> · 
+      <a href="privacy.html">Privacy Policy</a> · 
+      <a href="index.html">Home</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>
