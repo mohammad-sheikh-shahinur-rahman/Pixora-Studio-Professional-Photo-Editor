@@ -88,12 +88,12 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     )
 }
 
-/// Remove Background command spec (no menu path: a Properties Quick Action in Photoshop).
+/// Remove Background command spec: accessible in Select menu and Properties Quick Actions.
 pub fn specs() -> Vec<CommandSpec> {
     vec![CommandSpec {
         id: CMD,
         label: "Remove Background",
-        menu: &[],
+        menu: &["Select"],
         shortcut: None,
         params: r##"{"layer":id?,"sampleAllLayers":bool=false,"refine":bool=true} → {layer,bounds} (adds a layer mask from Select Subject; the Background becomes a normal layer)"##,
         enabled,

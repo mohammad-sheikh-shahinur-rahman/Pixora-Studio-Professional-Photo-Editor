@@ -99,7 +99,7 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
             center_x: f(p, "centerX", 0.5),
             center_y: f(p, "centerY", 0.5),
         },
-        "filter.blur.surfaceBlur" => {
+        "filter.blur.surfaceBlur" | "filter.retouch.skinSmoothing" => {
             FilterParams::SurfaceBlur { radius: f(p, "radius", 5.0).clamp(1.0, 100.0), threshold: f(p, "threshold", 15.0).clamp(2.0, 255.0) }
         }
         "filter.sharpen.unsharpMask" => FilterParams::UnsharpMask {
@@ -423,6 +423,7 @@ pub fn specs() -> Vec<CommandSpec> {
             r##"{"amount":1..100=10,"method":"spin|zoom","quality":"draft|good|best"="good","centerX":0..1=0.5,"centerY":0..1=0.5}"##
         ),
         filter_cmd!("filter.blur.surfaceBlur", "Surface Blur…", ["Filter", "Blur"], r##"{"radius":1..100=5,"threshold":2..255=15}"##),
+        filter_cmd!("filter.retouch.skinSmoothing", "Skin Smoothing…", ["Filter", "Retouch"], r##"{"radius":1..50=6,"threshold":2..100=20}"##),
         filter_cmd!(
             "filter.sharpen.unsharpMask",
             "Unsharp Mask…",
