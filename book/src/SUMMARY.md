@@ -1,6 +1,6 @@
 # Summary
 
-[PhotoCraft Documentation](README.md)
+[Pixora Studio Documentation](README.md)
 
 # Getting started
 
