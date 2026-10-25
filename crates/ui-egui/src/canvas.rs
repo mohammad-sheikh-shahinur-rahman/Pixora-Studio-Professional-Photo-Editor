@@ -3274,9 +3274,12 @@ fn start_screen(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let side_by_side = 2.0 * button_width + HOME_BUTTON_GAP <= card_width;
     // Stacked buttons take one more row.
     let stacked_h = if side_by_side { 0.0 } else { 44.0 };
-    let card = Rect::from_center_size(area.center(), egui::vec2(card_width, 330.0 + recent_h + stacked_h));
+    let card = Rect::from_center_size(area.center(), egui::vec2(card_width, 280.0 + recent_h + stacked_h));
     ui.scope_builder(egui::UiBuilder::new().max_rect(card), |ui| {
         ui.vertical_centered(|ui| {
+            let (icon_r, _) = ui.allocate_exact_size(egui::vec2(72.0, 72.0), Sense::hover());
+            crate::brand::paint_mark(ui, icon_r);
+            ui.add_space(14.0);
             ui.horizontal(|ui| {
                 let title = ui.painter().layout_no_wrap(tl!("Pixora Studio").into(), crate::theme::semibold(38.0), t.text);
                 let by = ui.painter().layout_no_wrap(tl!("by IT Amadersomaj Inc.").into(), egui::FontId::proportional(13.0), t.text_faint);
@@ -3323,10 +3326,6 @@ fn start_screen(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
                 ui.add_space(22.0);
                 home_recent(app, ui, &recent);
             }
-            ui.add_space(26.0);
-            crate::links::discord_button(app, ui, 190.0);
-            ui.add_space(10.0);
-            crate::links::link_row(app, ui);
         });
     });
 }
@@ -8075,7 +8074,7 @@ mod tests {
             PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::default());
             h.state_mut().1 = true;
             h.run_steps(3);
-            for label in ["New document", "Join us on Discord"] {
+            for label in ["New document"] {
                 for node in h.query_all_by_label_contains(label) {
                     let r = node.rect();
                     assert!(r.left() >= 0.0 && r.right() <= width, "`{label}` is clipped in a {width}-point-wide canvas: {r:?}");

@@ -12,8 +12,7 @@ pub const GITHUB: &str = "https://github.com/mohammad-sheikh-shahinur-rahman/Pix
 pub const ISSUES: &str = "https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/issues";
 
 /// Help-menu link commands: (id, url). Labels live in `menus::UI_COMMANDS`.
-pub const COMMANDS: &[(&str, &str)] =
-    &[("help.discord", DISCORD), ("help.website", APP_PAGE), ("help.github", GITHUB), ("help.reportIssue", ISSUES)];
+pub const COMMANDS: &[(&str, &str)] = &[];
 
 pub fn url_for(id: &str) -> Option<&'static str> {
     COMMANDS.iter().find(|c| c.0 == id).map(|c| c.1)
@@ -104,20 +103,12 @@ mod tests {
         assert_eq!(
             help,
             [
-                "help.discord",
-                "help.website",
-                "help.artcraftWebsite",
-                "help.github",
-                "help.reportIssue",
                 "help.checkForUpdates",
                 "---",
                 "help.systemInfo",
                 "help.about"
             ]
         );
-        for (id, _) in COMMANDS {
-            assert!(crate::menus::is_live(id) && crate::menus::is_enabled(&app, id), "{id}");
-        }
     }
 
     #[test]
@@ -125,9 +116,9 @@ mod tests {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
         for (id, url) in [
-            ("help.discord", "https://discord.gg/artcraft"),
-            ("help.website", "https://getartcraft.com/apps/photocraft"),
-            ("help.github", "https://github.com/storytold/photocraft"),
+            ("help.discord", "https://discord.gg/pixorastudio"),
+            ("help.website", "https://pixora.amadersomaj.com"),
+            ("help.github", "https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor"),
         ] {
             let r = crate::menus::invoke(&mut app, &ctx, id, serde_json::json!({})).unwrap();
             assert_eq!(r["url"], url);

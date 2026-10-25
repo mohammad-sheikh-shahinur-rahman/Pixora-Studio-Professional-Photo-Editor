@@ -342,7 +342,7 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                 ui.set_min_width(800.0);
             }
             // The About window: room for the contributor table, the same width on every tab.
-            let about_tabs = d.kind == DialogKind::About && d.fields.get("systemInfo").and_then(Value::as_bool) != Some(true);
+            let about_tabs = false;
             if about_tabs {
                 ui.set_min_width(700.0);
             }
@@ -409,22 +409,7 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                     }
                 }
                 DialogKind::About => {
-                    // Tabs About · Contributors · Models (craftrules standards/contributors.md). The
-                    // tab is a dialog field, so automation can switch it with `ui.dialog.set`.
-                    let tab = about_tab(&fields);
-                    let mut chosen = tab;
-                    ui.horizontal(|ui| {
-                        for (key, label) in [("about", tl!("About")), ("contributors", tl!("Contributors")), ("models", tl!("Models"))] {
-                            if crate::widgets::pill_tab(ui, label, tab == key).clicked() {
-                                chosen = key;
-                            }
-                        }
-                    });
-                    if chosen != tab {
-                        fields.insert("tab".into(), json!(chosen));
-                    }
-                    ui.add_space(8.0);
-                    about_tab_body(app, ui, chosen);
+                    about_tab_body(app, ui, "about");
                 }
                 DialogKind::Command if crate::open_prompt::owns_damage(&fields) => crate::open_prompt::damage_body(ui, &fields),
                 DialogKind::Command if crate::guide_layout_ui::owns(&fields) => outcome = crate::guide_layout_ui::body(app, ui, &mut fields, interactive),
@@ -678,9 +663,10 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
 }
 
 /// The About window's tabs, as stored in its `tab` field.
+#[allow(dead_code)]
 pub const ABOUT_TABS: [&str; 3] = ["about", "contributors", "models"];
 
-/// The About tab to show: the `tab` field when it names one, otherwise "about".
+#[allow(dead_code)]
 fn about_tab(fields: &serde_json::Map<String, Value>) -> &'static str {
     let want = fields.get("tab").and_then(Value::as_str).unwrap_or("");
     ABOUT_TABS.iter().copied().find(|t| *t == want).unwrap_or("about")
@@ -692,17 +678,26 @@ fn about_tab_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, tab: &str) {
         "contributors" => crate::credits::contributors_ui(app, ui),
         "models" => crate::credits::models_ui(ui),
         _ => {
-            ui.label(tl!("Pixora Studio — Professional Photo Editing. Free for Everyone."));
-            ui.label(tl!("Developed and published by IT Amadersomaj Inc."));
-            ui.label(crate::i18n::fmt(tl!("Version {version}"), &[("version", &photocraft_engine::build_info::long_version())]));
-            ui.add_space(12.0);
+            let t = crate::theme::Tokens::get(ui.ctx());
+            ui.add_space(8.0);
             ui.vertical_centered(|ui| {
-                crate::links::discord_button(app, ui, 220.0);
-                ui.add_space(8.0);
-                crate::links::link_row(app, ui);
+                let (icon_r, _) = ui.allocate_exact_size(egui::vec2(64.0, 64.0), egui::Sense::hover());
+                crate::brand::paint_mark(ui, icon_r);
+                ui.add_space(10.0);
+                ui.label(egui::RichText::new(tl!("Pixora Studio")).font(crate::theme::semibold(18.0)));
+                ui.label(egui::RichText::new(tl!("Professional Photo Editing. Free for Everyone.")).color(t.text_dim));
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new(tl!("Developed and published by IT Amadersomaj Inc.")).color(t.text_faint));
+                ui.label(
+                    egui::RichText::new(crate::i18n::fmt(
+                        tl!("Version {version}"),
+                        &[("version", &photocraft_engine::build_info::long_version())],
+                    ))
+                    .color(t.text_faint),
+                );
+                ui.add_space(14.0);
+                ui.weak("egui · wgpu · Rust");
             });
-            ui.add_space(10.0);
-            ui.weak("egui · wgpu · Rust");
         }
     }
 }
