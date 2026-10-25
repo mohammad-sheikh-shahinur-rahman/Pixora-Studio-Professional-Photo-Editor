@@ -3,7 +3,7 @@
 use photocraft_engine::updates_cmds::{CheckFn, CheckResult, parse_release};
 use std::time::Duration;
 
-const LATEST: &str = "https://api.github.com/repos/amadersomaj/pixora-studio/releases/latest";
+const LATEST: &str = "https://api.github.com/repos/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest";
 const MAX_RESPONSE: u64 = 1024 * 1024;
 
 pub fn service() -> CheckFn {

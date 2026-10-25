@@ -37,7 +37,7 @@
     <Property Id="ARPPRODUCTICON" Value="PixoraIcon.exe" />
     <Property Id="ARPURLINFOABOUT" Value="https://pixora.amadersomaj.com" />
     <Property Id="ARPURLUPDATEINFO" Value="https://pixora.amadersomaj.com" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/amadersomaj/pixora-studio" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor" />
 
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="Pixora Studio" />

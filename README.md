@@ -84,9 +84,9 @@ Pixora Studio is distributed for 64-bit Windows systems. Binaries link the C run
 
 | Package | Description | Download |
 |---|---|---|
-| **Windows Setup Installer (`.exe`)** | Self-contained single-click executable setup installer | [GitHub Releases](https://github.com/amadersomaj/pixora-studio/releases) |
-| **Windows MSI Installer (`.msi`)** | Per-machine Windows installer with Start Menu shortcuts and file associations | [GitHub Releases](https://github.com/amadersomaj/pixora-studio/releases) |
-| **Portable Edition (`.zip`)** | Zero-install standalone archive. Keeps settings in `PixoraStudioData\` beside the executable | [GitHub Releases](https://github.com/amadersomaj/pixora-studio/releases) |
+| **Windows Setup Installer (`.exe`)** | Self-contained single-click executable setup installer | [GitHub Releases](https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases) |
+| **Windows MSI Installer (`.msi`)** | Per-machine Windows installer with Start Menu shortcuts and file associations | [GitHub Releases](https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases) |
+| **Portable Edition (`.zip`)** | Zero-install standalone archive. Keeps settings in `PixoraStudioData\` beside the executable | [GitHub Releases](https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases) |
 
 ---
 
@@ -105,8 +105,8 @@ Pixora Studio is distributed for 64-bit Windows systems. Binaries link the C run
 ### Quick Build
 ```powershell
 # Clone the repository
-git clone https://github.com/amadersomaj/pixora-studio.git
-cd pixora-studio
+git clone https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor.git
+cd Pixora-Studio-Professional-Photo-Editor
 
 # Build release binaries
 cargo build --release -p photocraft -p photocraft-cli

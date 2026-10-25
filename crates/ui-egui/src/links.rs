@@ -8,8 +8,8 @@ use crate::PhotocraftApp;
 
 pub const DISCORD: &str = "https://discord.gg/pixorastudio";
 pub const APP_PAGE: &str = "https://pixora.amadersomaj.com";
-pub const GITHUB: &str = "https://github.com/amadersomaj/pixora-studio";
-pub const ISSUES: &str = "https://github.com/amadersomaj/pixora-studio/issues";
+pub const GITHUB: &str = "https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor";
+pub const ISSUES: &str = "https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/issues";
 
 /// Help-menu link commands: (id, url). Labels live in `menus::UI_COMMANDS`.
 pub const COMMANDS: &[(&str, &str)] =
