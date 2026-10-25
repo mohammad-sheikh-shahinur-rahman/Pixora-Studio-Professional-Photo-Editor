@@ -753,13 +753,13 @@ pub fn specs() -> Vec<CommandSpec> {
         ),
         spec!(
             "type.attachToPath",
-            "Type on a Path",
-            &[],
+            "Attach to Path",
+            &["Type"],
             r##"{"layer":id? (default active Type layer),"shape":layerId? (a shape layer; default the work path),"subpath":index=0,"start":px=0 (offset along the path),"at":[x,y]? (instead of "start": begin where the path passes nearest this document point, as a Type tool click does),"flip":bool=false (run along the path the other way, on its other side)}"##,
             has_text,
             attach_to_path
         ),
-        spec!("type.detachFromPath", "Release Type from Path", &[], LP, is_path_text, detach_from_path),
+        spec!("type.detachFromPath", "Release Type from Path", &["Type"], LP, is_path_text, detach_from_path),
         spec!("type.updateAllTextLayers", "Update All Text Layers", &["Type"], "{}", any_text, |s, _| update_all(s)),
         spec!("type.replaceAllMissingFonts", "Replace All Missing Fonts", &["Type"], "{} (with the default family)", any_text, |s, _| replace_fonts(
             s,

@@ -88,12 +88,14 @@
               Icon="PixoraIcon.exe" IconIndex="0" />
         </File>
 
-        <!-- .pcraft: Pixora Studio's native format; Pixora Studio is its default app. -->
+        <!-- .pix: Pixora Studio's native format; Pixora Studio is its default app. -->
         <ProgId Id="Pixora.Document" Description="Pixora Studio Document" Icon="PhotocraftExe" IconIndex="0">
-          <Extension Id="pcraft" ContentType="application/x-photocraft">
+          <Extension Id="pix" ContentType="application/x-pixora">
             <Verb Id="open" Command="Open" TargetFile="PhotocraftExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>
+        <RegistryValue Root="HKLM" Key="Software\Classes\.pixora" Value="Pixora.Document" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.pcraft" Value="Pixora.Document" Type="string" />
         <!-- PSD/PSB and images: offered under "Open with", never forced as the default. -->
         <ProgId Id="Pixora.PhotoshopDocument" Description="PSD Document" Icon="PhotocraftExe" IconIndex="0" />
         <RegistryValue Root="HKLM" Key="Software\Classes\Pixora.PhotoshopDocument\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
@@ -123,6 +125,8 @@
         <!-- "Open with" app list and the Run dialog (Win+R "photocraft"). -->
         <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe" Name="FriendlyAppName" Value="Pixora Studio" Type="string" />
         <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".pix" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".pixora" Value="" Type="string" />
         <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".pcraft" Value="" Type="string" />
         <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".psd" Value="" Type="string" />
         <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".psb" Value="" Type="string" />

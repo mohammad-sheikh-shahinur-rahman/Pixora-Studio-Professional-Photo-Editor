@@ -2597,6 +2597,29 @@ fn type_on_a_path_follows_the_curve() {
 }
 
 #[test]
+fn bengali_complex_script_on_a_path_preserves_ink_and_clusters() {
+    use photocraft_doc::vector::Subpath;
+    let fmt = PixelFormat::RGBA8;
+    let mut eng = TextEngine::new();
+    let ink = |eng: &mut TextEngine, t: &TextLayer| {
+        let (_, r) = eng.render(t, 72.0, fmt);
+        r.rect
+    };
+    // Bengali string with conjuncts and dependent vowel signs ("পিক্সোরা স্টুডিও")
+    let bengali = point("পিক্সোরা স্টুডিও", 28.0);
+    let flat = ink(&mut eng, &bengali);
+    assert!(flat.width() > 10, "renders non-empty ink: {flat:?}");
+
+    // Curved wave path
+    let wave = Subpath::polyline(&[(0.0, 0.0), (50.0, 20.0), (100.0, -20.0), (150.0, 10.0), (200.0, 0.0)]);
+    let mut on_path = bengali.clone();
+    on_path.shape = TextShape::Path { path: wave, start: 0.0, flip: false };
+    let curved = ink(&mut eng, &on_path);
+    assert!(curved.width() > 10, "curved bengali ink is present: {curved:?}");
+    assert!(curved.height() >= flat.height(), "wave path expands vertical bounds: {curved:?} vs {flat:?}");
+}
+
+#[test]
 fn hyphenless_postscript_names_split_trailing_styles() {
     for (ps, family, weight, italic) in [
         ("GmarketSansBold", "Gmarket Sans", 700, false),

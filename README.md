@@ -71,7 +71,7 @@
 - **Color Management:** High-precision ICC color workflows via `photocraft-cms`, supporting 8-bit, 16-bit integer, and 32-bit floating point pipelines.
 
 ### Supported File Formats
-- **Native Project:** `.pcraft` (high-speed transactional document format)
+- **Native Project:** `.pix` (Pixora Studio high-speed transactional document format; supports `.pix`, `.pixora`, `.pcraft`)
 - **Photoshop:** `.psd`, `.psb` (read and write)
 - **Standard Raster:** PNG, JPEG, TIFF, WebP, GIF, BMP, TGA, ICO, QOI
 - **High Dynamic Range:** OpenEXR (`.exr`), Radiance HDR (`.hdr`), AVIF (`.avif`)

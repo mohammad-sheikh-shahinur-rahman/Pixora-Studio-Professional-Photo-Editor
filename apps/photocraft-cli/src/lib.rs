@@ -16,7 +16,7 @@ photocraft-cli: headless PhotoCraft
 
 USAGE:
   photocraft-cli convert <in> <out> [--format <ext>] [--quality <1-100>] [--in-place] [--tiff-layers] [--tiff-compression <none|lzw|zip>] [--tga-bits <24|32>] [--dpx-bits <8|10|12|16>] [--dds-compression <none|bc1|bc2|bc3>] [--dds-mipmaps] [--jpeg-format <baseline|optimized|progressive>]
-      Convert between formats (.pcraft, .psd, .png, .jpg, .tif, .webp, .exr, …).
+      Convert between formats (.pix, .psd, .png, .jpg, .tif, .webp, .exr, …).
       An <out> that is the <in> file is refused, as the result would replace the original;
       --in-place allows it.
       TIFF output is flat unless --tiff-layers keeps the layers (Photoshop layer data);
@@ -557,7 +557,7 @@ fn same_dir(a: &Path, b: &Path) -> bool {
 
 fn is_input(p: &Path) -> bool {
     let known = |e: &str| {
-        matches!(e, "pcraft" | "psd" | "psb" | "pdn" | "ora" | "kra" | "krz" | "af" | "afdesign" | "afphoto" | "afpub")
+        matches!(e, "pix" | "pixora" | "pcraft" | "psd" | "psb" | "pdn" | "ora" | "kra" | "krz" | "af" | "afdesign" | "afphoto" | "afpub")
             || photocraft_codecs::from_extension(e).is_some_and(|f| photocraft_codecs::caps(f).read)
     };
     p.is_file() && p.extension().is_some_and(|e| known(&e.to_string_lossy().to_ascii_lowercase()))

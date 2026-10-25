@@ -397,7 +397,7 @@ fn import_psd(name: &str, bytes: &[u8], ctl: &photocraft_raster::Interrupt, dama
 /// flag alongside the ordinary best-effort import result.
 fn import_stages(name: &str, bytes: &[u8], ctl: &photocraft_raster::Interrupt, opts: &ImportOptions, damaged: &mut bool) -> Result<ImportResult, IoError> {
     // A declared native extension must reach its loader so malformed bundles retain format errors.
-    if has_extension(name, photocraft_format::EXTENSION) || photocraft_format::is_pcraft(bytes) {
+    if photocraft_format::is_native_extension(name) || photocraft_format::is_pcraft(bytes) {
         let document = photocraft_format::load_from_bytes(bytes)?;
         return Ok(ImportResult { warnings: open_warnings(&document), document, source_read_only: false, preview_only: false });
     }
@@ -524,7 +524,7 @@ fn export_stages(doc: &Document, name_or_ext: &str, opts: &ExportOptions, ctl: &
     }
     if ext == "xcf" {
         return Err(IoError::Unsupported(
-            "XCF is GIMP's own format and PhotoCraft only opens it; save as .pcraft to keep the layers, or export a flat image".into(),
+            "XCF is GIMP's own format and Pixora Studio only opens it; save as .pix to keep the layers, or export a flat image".into(),
         ));
     }
     if ext == "ora" {
@@ -533,7 +533,7 @@ fn export_stages(doc: &Document, name_or_ext: &str, opts: &ExportOptions, ctl: &
     if ext == "pdf" {
         return pdf::export(doc);
     }
-    if ext == photocraft_format::EXTENSION {
+    if photocraft_format::is_native_ext(&ext) {
         let doc = named_for_file(doc, name_or_ext);
         let thumbnail = Some(photocraft_compose::thumbnail(doc.as_ref(), 256));
         ctl.check().map_err(|_| IoError::Cancelled)?;

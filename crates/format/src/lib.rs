@@ -49,20 +49,36 @@ pub use manifest::{FORMAT_VERSION, Manifest};
 pub use read::read_file;
 pub use store::{ByteSource, DEFAULT_REVERIFY_BUDGET, PcraftWriter, SaveStats, read_entry};
 
-/// File extension of the native format.
-pub const EXTENSION: &str = "pcraft";
+/// Primary file extension of the Pixora Studio native format.
+pub const EXTENSION: &str = "pix";
+
+/// Supported native document extensions: primary `.pix`, full brand `.pixora`, and legacy `.pcraft`.
+pub const EXTENSIONS: &[&str] = &["pix", "pixora", "pcraft"];
+
+/// Checks whether `ext` matches any supported native document extension.
+pub fn is_native_ext(ext: &str) -> bool {
+    EXTENSIONS.iter().any(|&e| ext.eq_ignore_ascii_case(e))
+}
+
+/// Checks whether a path's extension is a recognized native document extension.
+pub fn is_native_extension(path: &str) -> bool {
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(is_native_ext)
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum FormatError {
-    #[error("corrupt .pcraft bundle: {0}")]
+    #[error("corrupt .pix bundle: {0}")]
     Corrupt(String),
-    #[error("unsupported .pcraft feature: {0}")]
+    #[error("unsupported .pix feature: {0}")]
     Unsupported(String),
     #[error("bundle written by a newer version (format {found}, this build reads up to {supported})")]
     TooNew { found: u32, supported: u32 },
     #[error("limit exceeded: {0}")]
     LimitExceeded(String),
-    #[error("`{path}` is NaN or infinite, which a .pcraft manifest cannot hold; reset that value and save again")]
+    #[error("`{path}` is NaN or infinite, which a .pix manifest cannot hold; reset that value and save again")]
     NonFinite { path: String },
     #[error("I/O: {0}")]
     Io(#[from] std::io::Error),
@@ -144,6 +160,11 @@ pub fn is_pcraft(bytes: &[u8]) -> bool {
         }
     }
     zip::ZipReader::new(bytes).is_ok_and(|archive| archive.find("manifest.json").is_some())
+}
+
+/// Alias for [`is_pcraft`] for `.pix` bundles.
+pub fn is_pix(bytes: &[u8]) -> bool {
+    is_pcraft(bytes)
 }
 
 /// Save to an in-memory ZIP bundle (one-shot; use [`PcraftWriter`] for

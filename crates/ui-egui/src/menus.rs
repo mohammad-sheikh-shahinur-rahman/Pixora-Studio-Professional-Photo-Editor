@@ -1089,13 +1089,12 @@ pub fn menu_items(app: &PhotocraftApp) -> Vec<MenuItem> {
         items.insert(before, update);
     }
     // Help: if update check is ahead of System Info and About, place a separator.
-    if let Some(at) = items.iter().position(|i| i.id == "help.systemInfo" || i.id == "help.about") {
-        if at > 0 && items[..at].iter().any(|i| i.path == ["Help"] && i.id != "---") {
-            items.insert(
-                at,
-                MenuItem { id: "---".into(), label: "---".into(), path: vec!["Help".into()], shortcut: None, enabled: false, checked: None, color: None },
-            );
-        }
+    let at_help = items.iter().position(|i| i.id == "help.systemInfo" || i.id == "help.about");
+    if let Some(at) = at_help.filter(|&at| at > 0 && items[..at].iter().any(|i| i.path == ["Help"] && i.id != "---")) {
+        items.insert(
+            at,
+            MenuItem { id: "---".into(), label: "---".into(), path: vec!["Help".into()], shortcut: None, enabled: false, checked: None, color: None },
+        );
     }
     // Window: the open documents in tab order, after a separator, the active one checked.
     if let Some(last) = items.iter().rposition(|i| i.path.first().map(String::as_str) == Some("Window")) {

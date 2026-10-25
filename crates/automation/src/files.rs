@@ -18,7 +18,7 @@ pub struct Opened {
 
 /// Decode a document that was read through a filesystem capability.
 pub fn open_bytes(name: &str, bytes: &[u8]) -> Result<Opened, AutomationError> {
-    if Path::new(name).extension().is_some_and(|extension| extension.eq_ignore_ascii_case(photocraft_format::EXTENSION)) {
+    if Path::new(name).extension().is_some_and(|extension| photocraft_format::is_native_ext(&extension.to_string_lossy())) {
         let document = photocraft_format::load_from_bytes(bytes)?;
         return Ok(Opened { warnings: photocraft_io::open_warnings(&document), document, source_read_only: false });
     }
@@ -68,7 +68,7 @@ pub fn save(
         .map(|f| f.trim_start_matches('.').to_ascii_lowercase())
         .or_else(|| path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()))
         .ok_or_else(|| AutomationError::BadRequest(format!("cannot tell the format of `{}`; pass a format", path.display())))?;
-    if ext == photocraft_format::EXTENSION {
+    if photocraft_format::is_native_ext(&ext) {
         let named = named_for_output(doc, &path.to_string_lossy());
         let mut local = PcraftWriter::new();
         let w = writer.unwrap_or(&mut local);
@@ -82,13 +82,13 @@ pub fn save(
 }
 
 /// Encode a document for a capability-scoped write. Unlike [`save`], this
-/// never obtains ambient filesystem authority and emits `.pcraft` as a ZIP.
+/// never obtains ambient filesystem authority and emits `.pix` as a ZIP.
 pub fn save_bytes(doc: &Document, name: &str, format_override: Option<&str>, opts: &ExportOptions) -> Result<(Vec<u8>, Vec<String>), AutomationError> {
     let ext = format_override
         .map(|format| format.trim_start_matches('.').to_ascii_lowercase())
         .or_else(|| Path::new(name).extension().map(|extension| extension.to_string_lossy().to_ascii_lowercase()))
         .ok_or_else(|| AutomationError::BadRequest(format!("cannot tell the format of `{name}`; pass a format")))?;
-    if ext == photocraft_format::EXTENSION {
+    if photocraft_format::is_native_ext(&ext) {
         let named = named_for_output(doc, name);
         return Ok((photocraft_format::save_to_bytes(&named, &previews(&named))?, Vec::new()));
     }

@@ -12,6 +12,11 @@ use crate::FontDb;
 /// The Glyphs panel's "Show" categories, in menu order.
 pub const CATEGORIES: &[&str] = &[
     "Entire Font",
+    "Alternates & Swashes",
+    "Ligatures",
+    "Fractions",
+    "Subscript & Superscript",
+    "Ordinals",
     "Basic Latin",
     "Latin 1",
     "Latin Extended-A",
@@ -31,6 +36,11 @@ pub const CATEGORIES: &[&str] = &[
 pub fn in_category(c: char, category: &str) -> bool {
     let u = c as u32;
     match category {
+        "Alternates & Swashes" => (0xE000..=0xF8FF).contains(&u) || (0x2E00..=0x2E7F).contains(&u),
+        "Ligatures" => (0xFB00..=0xFB4F).contains(&u) || matches!(u, 0x0132 | 0x0133 | 0x0152 | 0x0153 | 0x00C6 | 0x00E6),
+        "Fractions" => (0x2150..=0x218F).contains(&u) || matches!(u, 0x00BC..=0x00BE),
+        "Subscript & Superscript" => (0x2070..=0x209F).contains(&u) || matches!(u, 0x00B2 | 0x00B3 | 0x00B9),
+        "Ordinals" => matches!(u, 0x00AA | 0x00BA | 0x2116),
         "Basic Latin" => (0x20..=0x7E).contains(&u),
         "Latin 1" => (0xA0..=0xFF).contains(&u),
         "Latin Extended-A" => (0x100..=0x17F).contains(&u),
@@ -150,6 +160,7 @@ mod tests {
         let latin: Vec<char> = cm.iter().copied().filter(|c| in_category(*c, "Basic Latin")).collect();
         assert_eq!(latin.len(), 95);
         assert!(in_category('€', "Currency") && in_category('—', "Punctuation") && in_category('→', "Arrows"));
+        assert!(in_category('½', "Fractions") && in_category('²', "Subscript & Superscript") && in_category('№', "Ordinals"));
         assert!(!in_category('A', "Punctuation") && in_category('A', "Entire Font"));
     }
 

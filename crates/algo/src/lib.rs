@@ -70,6 +70,7 @@ pub mod scancrop;
 pub mod seam;
 pub mod segment;
 pub mod selection;
+pub mod sky_replace;
 mod selection_blur;
 mod shape_blur;
 mod sharpen;

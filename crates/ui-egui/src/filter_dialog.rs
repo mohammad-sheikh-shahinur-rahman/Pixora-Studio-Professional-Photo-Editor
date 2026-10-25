@@ -306,6 +306,7 @@ pub const PREVIEWED: &[&str] = &[
     // The preview shows the image through the chosen profile, as Photoshop's Preview does.
     "edit.assignProfile",
     "edit.convertToProfile",
+    "edit.skyReplacement",
 ];
 
 pub fn has_dialog(command: &str) -> bool {
@@ -325,6 +326,7 @@ pub fn has_dialog(command: &str) -> bool {
                 | "image.mode.colorTable"
                 | "edit.definePattern"
                 | "select.convertToShape"
+                | "edit.skyReplacement"
         ))
         && photocraft_engine::commands::find(command).is_some_and(|c| !parse_spec(c.params).is_empty())
 }

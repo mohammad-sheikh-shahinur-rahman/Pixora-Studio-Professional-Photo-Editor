@@ -22,6 +22,7 @@
 
 mod apply;
 pub mod manifest;
+pub mod ps_8bf;
 pub mod registry;
 mod runtime;
 

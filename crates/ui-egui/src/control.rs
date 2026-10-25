@@ -1286,10 +1286,10 @@ fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) 
         }
         "app.open" => match s("path") {
             Some(path) => {
-                // Directory .pcraft (the native on-disk form) loads through a capability-scoped
+                // Directory .pix (the native on-disk form) loads through a capability-scoped
                 // source; the single-file (zip) form falls back to the bytes path, as do all
                 // other formats.
-                if path.rsplit_once('.').is_some_and(|(_, ext)| ext.eq_ignore_ascii_case(photocraft_format::EXTENSION))
+                if path.rsplit_once('.').is_some_and(|(_, ext)| photocraft_format::is_native_ext(ext))
                     && let Some(open) = app.services.automation_open_pcraft.as_mut()
                 {
                     match open(path) {
