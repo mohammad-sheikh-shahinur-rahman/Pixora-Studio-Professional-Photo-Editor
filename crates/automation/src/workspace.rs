@@ -409,7 +409,10 @@ fn command_uses_ambient_path(id: &str, params: &Value) -> bool {
         "edit.keyboardShortcuts" => {
             params.get("path").is_some() || ["importKys", "exportKys", "summarize"].iter().any(|k| params.get(*k).and_then(|v| v.get("path")).is_some())
         }
-        "plugin.reload" => true,
+        // The 8BF bridge reads host plugin files (and `run8bf` launches a native DLL, and
+        // `scan8bf` reads the per-install plug-in folder even without a `dir`): fail closed
+        // until these consume capability-scoped document methods, like `plugin.reload`.
+        "plugin.reload" | "plugin.scan8bf" | "plugin.run8bf" | "plugin.install8bf" => true,
         _ => false,
     }
 }
@@ -1000,6 +1003,11 @@ mod tests {
             ("gradient.presets.importGrd", serde_json::json!({"path": "/outside/set.grd"})),
             ("plugin.install", serde_json::json!({"path": "/outside/plugin.wasm"})),
             ("plugin.reload", serde_json::json!({"path": "/outside/plugins"})),
+            ("plugin.scan8bf", serde_json::json!({"dir": "/outside/8BF"})),
+            // Even with no `dir`, scanning reads the per-install plug-in folder.
+            ("plugin.scan8bf", serde_json::json!({})),
+            ("plugin.run8bf", serde_json::json!({"path": "/outside/filter.8bf", "entryPoint": "PluginMain"})),
+            ("plugin.install8bf", serde_json::json!({"path": "/outside/filter.8bf"})),
             ("style.presets.importAsl", serde_json::json!({"path": "/outside/set.asl"})),
             ("style.presets.exportAsl", serde_json::json!({"path": "/outside/set.asl"})),
             ("prefs.set", serde_json::json!({"path": "historyLog.filePath", "value": "/outside/log"})),

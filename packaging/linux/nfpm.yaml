@@ -3,7 +3,7 @@
 # exports VERSION and NFPM_ARCH.
 #
 #   nfpm package -f packaging/linux/nfpm.yaml -p deb -t dist/release/
-name: photocraft
+name: pixora-studio
 arch: ${NFPM_ARCH}
 platform: linux
 version: ${VERSION}
@@ -13,11 +13,11 @@ release: 1
 section: graphics
 priority: optional
 maintainer: ${PHOTOCRAFT_MAINTAINER}
-vendor: Learning Machines LLC
-homepage: https://getartcraft.com/apps/photocraft
+vendor: IT Amadersomaj Inc.
+homepage: https://github.com/itamadersomaj/pixora-studio
 license: MIT OR Apache-2.0
 description: |-
-  Open-source, native image editor with familiar, professional tools.
+  Pixora Studio — Professional Photo & Graphics Editing for Linux.
   Layers, masks, adjustment layers, layer styles, type and brushes; opens and
   saves layered PSD/PSB files; 8/16/32-bit documents; GPU compositing (wgpu).
   Includes photocraft-cli, a headless converter and command runner.

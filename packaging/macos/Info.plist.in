@@ -33,9 +33,9 @@
     <string>vi</string>
   </array>
   <key>CFBundleDisplayName</key>
-  <string>PhotoCraft</string>
+  <string>Pixora Studio</string>
   <key>CFBundleName</key>
-  <string>PhotoCraft</string>
+  <string>Pixora Studio</string>
   <key>CFBundleExecutable</key>
   <string>PhotoCraft</string>
   <key>CFBundleIdentifier</key>
@@ -69,16 +69,16 @@
   <key>NSRequiresAquaSystemAppearance</key>
   <false/>
   <key>NSHumanReadableCopyright</key>
-  <string>Copyright © the PhotoCraft authors. MIT OR Apache-2.0.</string>
+  <string>Copyright © the Pixora Studio authors. MIT OR Apache-2.0.</string>
 
-  <!-- PhotoCraft's own format. -->
+  <!-- Pixora Studio's own format. -->
   <key>UTExportedTypeDeclarations</key>
   <array>
     <dict>
       <key>UTTypeIdentifier</key>
       <string>ai.storyteller.photocraft.document</string>
       <key>UTTypeDescription</key>
-      <string>PhotoCraft Document</string>
+      <string>Pixora Studio Document</string>
       <key>UTTypeConformsTo</key>
       <array>
         <string>public.data</string>
@@ -181,7 +181,7 @@
   <array>
     <dict>
       <key>CFBundleTypeName</key>
-      <string>PhotoCraft Document</string>
+      <string>Pixora Studio Document</string>
       <key>CFBundleTypeRole</key>
       <string>Editor</string>
       <key>LSHandlerRank</key>

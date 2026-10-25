@@ -58,19 +58,122 @@ jobs:
         run: |
           pwsh packaging/windows/package.ps1 -Arch x64
 
-      - name: Generate SHA-256 Checksums
-        shell: pwsh
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            dist/release/*-installer.exe
+            dist/release/*.msi
+            dist/release/*.zip
+          if-no-files-found: error
+
+  build-linux:
+    name: Build & Package Linux x86_64
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Linux build dependencies
         run: |
-          $dist = "dist/release"
-          Get-ChildItem -Path $dist -File -Include *.msi, *.zip, *.exe | ForEach-Object {
-            $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$hash  $($_.Name)"
-          } | Out-File -FilePath "$dist/SHA256SUMS.txt" -Encoding ascii
-          Get-Content "$dist/SHA256SUMS.txt"
+          sudo apt-get update
+          sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libegl1-mesa-dev libvulkan-dev zsync desktop-file-utils appstream
+
+      - name: Install nfpm
+        run: |
+          curl -sfL https://github.com/goreleaser/nfpm/releases/download/v2.41.1/nfpm_2.41.1_Linux_x86_64.tar.gz | sudo tar -xz -C /usr/local/bin nfpm
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Rust dependency cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: linux-release
+
+      - name: Build and Package Linux Release
+        env:
+          PHOTOCRAFT_VERSION: ${{ inputs.version }}
+        run: |
+          chmod +x packaging/linux/package.sh packaging/linux/AppRun packaging/linux/verified-download.sh
+          bash packaging/linux/package.sh
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            dist/release/*.AppImage
+            dist/release/*.AppImage.zsync
+            dist/release/*.deb
+            dist/release/*.rpm
+            dist/release/*.tar.gz
+          if-no-files-found: warn
+
+  build-macos:
+    name: Build & Package macOS Universal (Apple Silicon & Intel)
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Rust dependency cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: macos-release
+
+      - name: Build and Package macOS Release
+        env:
+          PHOTOCRAFT_VERSION: ${{ inputs.version }}
+        run: |
+          chmod +x packaging/macos/package.sh
+          bash packaging/macos/package.sh --arch universal
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            dist/release/*.dmg
+            dist/release/*-macos-*.zip
+          if-no-files-found: warn
+
+  publish-release:
+    name: Publish Multi-Platform Release
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/release
+          pattern: '*-artifacts'
+          merge-multiple: true
+
+      - name: Generate Unified SHA-256 Checksums
+        working-directory: dist/release
+        run: |
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         with:
           name: "Pixora Studio ${{ inputs.version || github.ref_name }}"
           draft: false
@@ -79,19 +182,38 @@ jobs:
             dist/release/*-installer.exe
             dist/release/*.msi
             dist/release/*.zip
+            dist/release/*.AppImage
+            dist/release/*.AppImage.zsync
+            dist/release/*.deb
+            dist/release/*.rpm
+            dist/release/*.tar.gz
+            dist/release/*.dmg
             dist/release/SHA256SUMS.txt
           body: |
-            ## Pixora Studio — Professional Photo Editing. Free for Everyone.
+            ## Pixora Studio — Professional Photo & Graphics Editing for Everyone.
 
             **Publisher:** IT Amadersomaj Inc.
             **Release:** ${{ inputs.version || github.ref_name }}
-            **Target Platform:** Windows 10/11 x64
 
-            ### Downloads
-            - **Installer (EXE):** Single-click self-contained setup executable (`pixora-studio-*-installer.exe`).
-            - **Installer (MSI):** Standard per-machine Windows installer package (`pixora-studio-*.msi`).
-            - **Portable (ZIP):** Standalone zero-install archive. Run `photocraft.exe` directly; settings and recovery data remain in `PixoraStudioData/`.
-            - **Checksums:** Verified SHA-256 hashes provided in `SHA256SUMS.txt`.
+            ### Multi-Platform Downloads
+
+            #### Windows (10 / 11 x64)
+            - **Installer (EXE):** Single-click self-contained setup executable (`pixora-studio-*-windows-x64-installer.exe`).
+            - **Installer (MSI):** Enterprise per-machine Windows installer package (`pixora-studio-*-windows-x64.msi`).
+            - **Portable (ZIP):** Standalone zero-install archive (`pixora-studio-*-windows-x64-portable.zip`).
+
+            #### macOS (Apple Silicon M1/M2/M3/M4 & Intel x86_64)
+            - **DMG Image:** Universal drag-and-drop installer (`pixora-studio-*-macos-universal.dmg`).
+            - **Headless CLI:** Command-line tool package (`pixora-studio-cli-*-macos-universal.zip`).
+
+            #### Linux (x86_64)
+            - **AppImage:** Standalone portable executable for any modern distribution (`pixora-studio-*-linux-x86_64.AppImage`).
+            - **Debian / Ubuntu (.deb):** Native Debian package for Ubuntu, Debian, Mint, Pop!_OS (`pixora-studio-*-linux-x86_64.deb`).
+            - **RedHat / Fedora (.rpm):** Native RPM package for Fedora, openSUSE, RHEL (`pixora-studio-*-linux-x86_64.rpm`).
+            - **Tarball (.tar.gz):** Standalone FHS binary archive (`pixora-studio-*-linux-x86_64.tar.gz`).
+
+            #### Verification & Security
+            - Verified SHA-256 hashes are provided in `SHA256SUMS.txt`.
 
             ### Open Source & Licensing
-            Pixora Studio is an independent open-source fork developed by IT Amadersomaj Inc. Dual-licensed under the MIT and Apache-2.0 licenses. See `LICENSES.md` and `ATTRIBUTION.md` for full copyright and third-party notices.
+            Pixora Studio is an independent open-source fork developed by IT Amadersomaj Inc. Dual-licensed under MIT and Apache-2.0. See `LICENSES.md` and `ATTRIBUTION.md`.

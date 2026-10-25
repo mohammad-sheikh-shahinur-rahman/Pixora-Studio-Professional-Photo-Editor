@@ -15,8 +15,8 @@ const MANIFEST: &str = r#"{
   "name": "Invert (WebAssembly)",
   "version": "1.0.0",
   "kind": "filter",
-  "author": "PhotoCraft contributors",
-  "description": "Inverts the colour channels; an example of the PhotoCraft plug-in ABI.",
+  "author": "Pixora Studio contributors",
+  "description": "Inverts the colour channels; an example of the Pixora Studio plug-in ABI.",
   "params": {}
 }"#;
 

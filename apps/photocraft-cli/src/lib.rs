@@ -12,7 +12,7 @@ use photocraft_io::ExportOptions;
 use serde_json::{Value, json};
 
 pub const USAGE: &str = "\
-photocraft-cli: headless PhotoCraft
+photocraft-cli: headless Pixora Studio
 
 USAGE:
   photocraft-cli convert <in> <out> [--format <ext>] [--quality <1-100>] [--in-place] [--tiff-layers] [--tiff-compression <none|lzw|zip>] [--tga-bits <24|32>] [--dpx-bits <8|10|12|16>] [--dds-compression <none|bc1|bc2|bc3>] [--dds-mipmaps] [--jpeg-format <baseline|optimized|progressive>]
@@ -542,7 +542,7 @@ pub fn load_actions_file(path: &str, name: Option<&str>) -> Result<(Steps, Vec<A
         .unsupported
         .iter()
         .filter(|u| u.action == action.name)
-        .map(|u| format!("`{}` step {}: Photoshop's \"{}\" ({}) has no PhotoCraft equivalent yet", u.action, u.step + 1, u.name, u.event))
+        .map(|u| format!("`{}` step {}: Photoshop's \"{}\" ({}) has no Pixora Studio equivalent yet", u.action, u.step + 1, u.name, u.event))
         .chain(imp.warnings.iter().cloned())
         .collect();
     let play = vec![("actions.play".to_string(), json!({"action": action.name}))];

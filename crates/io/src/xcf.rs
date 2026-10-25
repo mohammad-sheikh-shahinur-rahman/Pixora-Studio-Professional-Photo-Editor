@@ -819,7 +819,7 @@ pub(crate) fn import(name: &str, bytes: &[u8], ctl: &Interrupt<'_>) -> Result<Im
     // transparency to show through: a bottom layer that is not opaque.
     if image.clipped_to_backdrop > 0 && document.layers.first().is_some_and(|l| !l.locks.transparency || l.is_group()) {
         image.warnings.note(&format!(
-            "{} layer(s) use a mode GIMP clips to the layers beneath; where those are transparent GIMP shows nothing and PhotoCraft shows the layer",
+            "{} layer(s) use a mode GIMP clips to the layers beneath; where those are transparent GIMP shows nothing and Pixora Studio shows the layer",
             image.clipped_to_backdrop
         ));
     }
@@ -827,7 +827,7 @@ pub(crate) fn import(name: &str, bytes: &[u8], ctl: &Interrupt<'_>) -> Result<Im
     // Photoshop, in the document's own encoding, so semi-transparent edges and most blend modes
     // render a little differently. Layers set to a perceptual space in GIMP match.
     if !precision.linear && linear_compositing {
-        image.warnings.note("GIMP composites this image in linear light; PhotoCraft composites in gamma-encoded RGB, so blends and soft edges differ slightly");
+        image.warnings.note("GIMP composites this image in linear light; Pixora Studio composites in gamma-encoded RGB, so blends and soft edges differ slightly");
     }
     if document.layers.is_empty() {
         image.warnings.note("the XCF file has no layers");

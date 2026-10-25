@@ -270,7 +270,7 @@ pub fn save(params: &CameraRaw) -> String {
     let mut p = params.clone();
     let wb = if p.temperature != 0.0 || p.tint != 0.0 { "Custom" } else { "As Shot" };
     let mut out = String::from(
-        "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"PhotoCraft\">\n <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n  <rdf:Description rdf:about=\"\"\n    xmlns:crs=\"http://ns.adobe.com/camera-raw-settings/1.0/\"\n",
+        "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"Pixora Studio\">\n <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n  <rdf:Description rdf:about=\"\"\n    xmlns:crs=\"http://ns.adobe.com/camera-raw-settings/1.0/\"\n",
     );
     out.push_str("   crs:Version=\"18.4\"\n   crs:ProcessVersion=\"15.4\"\n");
     out.push_str(&format!("   crs:WhiteBalance=\"{wb}\"\n"));
