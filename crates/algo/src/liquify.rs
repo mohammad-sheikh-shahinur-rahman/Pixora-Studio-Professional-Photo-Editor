@@ -40,6 +40,7 @@ pub enum LiquifyTool {
     Freeze,
     Thaw,
     LassoMask,
+    Face,
     /// The Reconstruct… button: scales the whole (unfrozen) field toward zero by `amount` %.
     ReconstructAll,
     /// Mask Options › Mask All / None / Invert All (whole-field freeze edits).
@@ -49,7 +50,7 @@ pub enum LiquifyTool {
 }
 
 impl LiquifyTool {
-    pub const ALL: [LiquifyTool; 11] = [
+    pub const ALL: [LiquifyTool; 12] = [
         LiquifyTool::ForwardWarp,
         LiquifyTool::Reconstruct,
         LiquifyTool::Smooth,
@@ -61,6 +62,7 @@ impl LiquifyTool {
         LiquifyTool::Freeze,
         LiquifyTool::Thaw,
         LiquifyTool::LassoMask,
+        LiquifyTool::Face,
     ];
 
     pub fn label(self) -> &'static str {
@@ -76,6 +78,7 @@ impl LiquifyTool {
             LiquifyTool::Freeze => "Freeze Mask",
             LiquifyTool::Thaw => "Thaw Mask",
             LiquifyTool::LassoMask => "Freeze Lasso",
+            LiquifyTool::Face => "Face Tool",
             LiquifyTool::ReconstructAll => "Reconstruct All",
             LiquifyTool::FreezeAll => "Mask All",
             LiquifyTool::ThawAll => "Mask None",
@@ -90,7 +93,7 @@ impl LiquifyTool {
 
     /// Tools that act while the brush is held still (each recorded point is a dab).
     pub fn is_stationary(self) -> bool {
-        !matches!(self, LiquifyTool::ForwardWarp | LiquifyTool::PushLeft | LiquifyTool::LassoMask)
+        !matches!(self, LiquifyTool::ForwardWarp | LiquifyTool::PushLeft | LiquifyTool::LassoMask | LiquifyTool::Face)
     }
 }
 
@@ -212,6 +215,172 @@ pub fn auto_cell(bounds: Rect) -> f64 {
     if bounds.size().area() <= 4_200_000 { 2.0 } else { 4.0 }
 }
 
+/// A detected or user-specified face and its key landmark positions (in document/canvas pixels).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DetectedFace {
+    pub bounds: Rect,
+    pub center: [f64; 2],
+    pub left_eye: [f64; 2],
+    pub right_eye: [f64; 2],
+    pub nose: [f64; 2],
+    pub mouth: [f64; 2],
+    pub chin: [f64; 2],
+    pub forehead: [f64; 2],
+    pub left_jaw: [f64; 2],
+    pub right_jaw: [f64; 2],
+}
+
+impl DetectedFace {
+    pub fn from_bounds(bounds: Rect) -> Self {
+        let x0 = bounds.x0 as f64;
+        let y0 = bounds.y0 as f64;
+        let w = bounds.width().max(1) as f64;
+        let h = bounds.height().max(1) as f64;
+        DetectedFace {
+            bounds,
+            center: [x0 + w * 0.5, y0 + h * 0.5],
+            left_eye: [x0 + w * 0.32, y0 + h * 0.38],
+            right_eye: [x0 + w * 0.68, y0 + h * 0.38],
+            nose: [x0 + w * 0.50, y0 + h * 0.54],
+            mouth: [x0 + w * 0.50, y0 + h * 0.72],
+            chin: [x0 + w * 0.50, y0 + h * 0.90],
+            forehead: [x0 + w * 0.50, y0 + h * 0.18],
+            left_jaw: [x0 + w * 0.18, y0 + h * 0.75],
+            right_jaw: [x0 + w * 0.82, y0 + h * 0.75],
+        }
+    }
+}
+
+/// Sliders for Photoshop-compatible Face-Aware Liquify (-100..100).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FaceLiquifyParams {
+    pub face_index: usize,
+    // Eyes:
+    pub eye_size_left: f32,
+    pub eye_size_right: f32,
+    pub eye_height: f32,
+    pub eye_width: f32,
+    pub eye_tilt: f32,
+    pub eye_distance: f32,
+    // Nose:
+    pub nose_height: f32,
+    pub nose_width: f32,
+    // Mouth:
+    pub smile: f32,
+    pub upper_lip: f32,
+    pub lower_lip: f32,
+    pub mouth_width: f32,
+    pub mouth_height: f32,
+    // Face shape:
+    pub forehead: f32,
+    pub chin_height: f32,
+    pub jawline: f32,
+    pub face_width: f32,
+}
+
+impl Default for FaceLiquifyParams {
+    fn default() -> Self {
+        FaceLiquifyParams {
+            face_index: 0,
+            eye_size_left: 0.0,
+            eye_size_right: 0.0,
+            eye_height: 0.0,
+            eye_width: 0.0,
+            eye_tilt: 0.0,
+            eye_distance: 0.0,
+            nose_height: 0.0,
+            nose_width: 0.0,
+            smile: 0.0,
+            upper_lip: 0.0,
+            lower_lip: 0.0,
+            mouth_width: 0.0,
+            mouth_height: 0.0,
+            forehead: 0.0,
+            chin_height: 0.0,
+            jawline: 0.0,
+            face_width: 0.0,
+        }
+    }
+}
+
+impl FaceLiquifyParams {
+    pub fn is_identity(&self) -> bool {
+        self.eye_size_left == 0.0
+            && self.eye_size_right == 0.0
+            && self.eye_height == 0.0
+            && self.eye_width == 0.0
+            && self.eye_tilt == 0.0
+            && self.eye_distance == 0.0
+            && self.nose_height == 0.0
+            && self.nose_width == 0.0
+            && self.smile == 0.0
+            && self.upper_lip == 0.0
+            && self.lower_lip == 0.0
+            && self.mouth_width == 0.0
+            && self.mouth_height == 0.0
+            && self.forehead == 0.0
+            && self.chin_height == 0.0
+            && self.jawline == 0.0
+            && self.face_width == 0.0
+    }
+}
+
+/// Detects faces in `surface` using skin-tone chromaticity clustering with fallback to default portrait center.
+pub fn detect_faces(surface: &Surface) -> Vec<DetectedFace> {
+    let bounds = surface.content_bounds();
+    if bounds.width() <= 10 || bounds.height() <= 10 {
+        return vec![DetectedFace::from_bounds(bounds)];
+    }
+    let (w, h) = (bounds.width() as usize, bounds.height() as usize);
+    let step_x = (w / 120).max(1);
+    let step_y = (h / 120).max(1);
+    let mut min_x = w;
+    let mut min_y = h;
+    let mut max_x = 0;
+    let mut max_y = 0;
+    let mut count = 0;
+
+    for y in (0..h).step_by(step_y) {
+        for x in (0..w).step_by(step_x) {
+            let r = surface.sample_channel(x as i32 + bounds.x0, y as i32 + bounds.y0, 0);
+            let g = surface.sample_channel(x as i32 + bounds.x0, y as i32 + bounds.y0, 1);
+            let b = surface.sample_channel(x as i32 + bounds.x0, y as i32 + bounds.y0, 2);
+            let y_lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            let cb = -0.168736 * r - 0.331264 * g + 0.5 * b + 0.5;
+            let cr = 0.5 * r - 0.418688 * g - 0.081312 * b + 0.5;
+            if y_lum > 0.15 && (0.35..=0.52).contains(&cb) && (0.52..=0.68).contains(&cr) {
+                min_x = min_x.min(x);
+                min_y = min_y.min(y);
+                max_x = max_x.max(x);
+                max_y = max_y.max(y);
+                count += 1;
+            }
+        }
+    }
+
+    if count > 20 && max_x > min_x && max_y > min_y {
+        let fw = (max_x - min_x) as i32;
+        let fh = (max_y - min_y) as i32;
+        let face_box = Rect::new(
+            bounds.x0 + min_x as i32,
+            bounds.y0 + min_y as i32,
+            bounds.x0 + min_x as i32 + fw,
+            bounds.y0 + min_y as i32 + fh,
+        ).intersect(&bounds);
+        if !face_box.is_empty() {
+            return vec![DetectedFace::from_bounds(face_box)];
+        }
+    }
+
+    let def_box = Rect::new(
+        bounds.x0 + (bounds.width() as f64 * 0.22) as i32,
+        bounds.y0 + (bounds.height() as f64 * 0.15) as i32,
+        bounds.x0 + (bounds.width() as f64 * 0.78) as i32,
+        bounds.y0 + (bounds.height() as f64 * 0.85) as i32,
+    );
+    vec![DetectedFace::from_bounds(def_box)]
+}
+
 /// Most nodes of a field's displacement grid (12 bytes each with the freeze mask): 192 MB.
 const MAX_FIELD_NODES: usize = 1 << 24;
 
@@ -267,8 +436,156 @@ impl LiquifyField {
         (at(i, j) * (1.0 - fx) + at(i + 1, j) * fx) * (1.0 - fy) + (at(i, j + 1) * (1.0 - fx) + at(i + 1, j + 1) * fx) * fy
     }
 
+    /// Warps the displacement field around facial landmarks according to `params` (-100..100).
+    pub fn apply_face(&mut self, face: &DetectedFace, params: &FaceLiquifyParams) -> Rect {
+        if params.is_identity() {
+            return Rect::EMPTY;
+        }
+        let fw = face.bounds.width().max(10) as f64;
+        let dirty_bounds = face.bounds.inflate(30).intersect(&self.bounds);
+        if dirty_bounds.is_empty() {
+            return Rect::EMPTY;
+        }
+
+        let (gx0, gy0) = self.to_grid(dirty_bounds.x0 as f64, dirty_bounds.y0 as f64);
+        let (gx1, gy1) = self.to_grid(dirty_bounds.x1 as f64, dirty_bounds.y1 as f64);
+        let j0 = (gy0.floor().max(0.0) as usize).min(self.h.saturating_sub(1));
+        let j1 = (gy1.ceil().max(0.0) as usize).min(self.h.saturating_sub(1));
+        let i0 = (gx0.floor().max(0.0) as usize).min(self.w.saturating_sub(1));
+        let i1 = (gx1.ceil().max(0.0) as usize).min(self.w.saturating_sub(1));
+
+        let r_eye = fw * 0.18;
+        let r_nose = fw * 0.16;
+        let r_mouth = fw * 0.22;
+        let r_chin = fw * 0.25;
+        let r_forehead = fw * 0.35;
+        let r_jaw = fw * 0.26;
+
+        let left_eye_center = [
+            face.left_eye[0] - (params.eye_distance as f64 * 0.08),
+            face.left_eye[1],
+        ];
+        let right_eye_center = [
+            face.right_eye[0] + (params.eye_distance as f64 * 0.08),
+            face.right_eye[1],
+        ];
+
+        for j in j0..=j1 {
+            for i in i0..=i1 {
+                let node_idx = j * self.w + i;
+                let freeze = self.freeze.get(node_idx).copied().unwrap_or(0.0);
+                if freeze >= 1.0 {
+                    continue;
+                }
+                let free_factor = (1.0 - freeze) as f64;
+                let p = self.node_pos(i, j);
+                let mut total_dx = 0.0f64;
+                let mut total_dy = 0.0f64;
+
+                // 1. Left Eye
+                let d_le = ((p[0] - left_eye_center[0]).hypot(p[1] - left_eye_center[1])) / r_eye;
+                if d_le < 1.0 {
+                    let w = (1.0 - d_le * d_le).powi(2);
+                    let rel_x = p[0] - left_eye_center[0];
+                    let rel_y = p[1] - left_eye_center[1];
+                    let size_f = params.eye_size_left as f64 * -0.003;
+                    total_dx += rel_x * size_f * w;
+                    total_dy += rel_y * size_f * w;
+                    total_dx += rel_x * (params.eye_width as f64 * -0.003) * w;
+                    total_dy += rel_y * (params.eye_height as f64 * -0.003) * w;
+                    let angle = params.eye_tilt as f64 * 0.002;
+                    total_dx += -rel_y * angle * w;
+                    total_dy += rel_x * angle * w;
+                    total_dx += (params.eye_distance as f64 * 0.1) * w;
+                }
+
+                // 2. Right Eye
+                let d_re = ((p[0] - right_eye_center[0]).hypot(p[1] - right_eye_center[1])) / r_eye;
+                if d_re < 1.0 {
+                    let w = (1.0 - d_re * d_re).powi(2);
+                    let rel_x = p[0] - right_eye_center[0];
+                    let rel_y = p[1] - right_eye_center[1];
+                    let size_f = params.eye_size_right as f64 * -0.003;
+                    total_dx += rel_x * size_f * w;
+                    total_dy += rel_y * size_f * w;
+                    total_dx += rel_x * (params.eye_width as f64 * -0.003) * w;
+                    total_dy += rel_y * (params.eye_height as f64 * -0.003) * w;
+                    let angle = params.eye_tilt as f64 * -0.002;
+                    total_dx += -rel_y * angle * w;
+                    total_dy += rel_x * angle * w;
+                    total_dx += -(params.eye_distance as f64 * 0.1) * w;
+                }
+
+                // 3. Nose
+                let d_nose = ((p[0] - face.nose[0]).hypot(p[1] - face.nose[1])) / r_nose;
+                if d_nose < 1.0 {
+                    let w = (1.0 - d_nose * d_nose).powi(2);
+                    let rel_x = p[0] - face.nose[0];
+                    let rel_y = p[1] - face.nose[1];
+                    total_dx += rel_x * (params.nose_width as f64 * -0.003) * w;
+                    total_dy += rel_y * (params.nose_height as f64 * -0.003) * w;
+                }
+
+                // 4. Mouth & Smile
+                let d_mouth = ((p[0] - face.mouth[0]).hypot(p[1] - face.mouth[1])) / r_mouth;
+                if d_mouth < 1.0 {
+                    let w = (1.0 - d_mouth * d_mouth).powi(2);
+                    let rel_x = p[0] - face.mouth[0];
+                    let rel_y = p[1] - face.mouth[1];
+                    total_dx += rel_x * (params.mouth_width as f64 * -0.003) * w;
+                    total_dy += rel_y * (params.mouth_height as f64 * -0.003) * w;
+                    if rel_y < 0.0 {
+                        total_dy += (params.upper_lip as f64 * 0.05) * w;
+                    } else {
+                        total_dy += -(params.lower_lip as f64 * 0.05) * w;
+                    }
+                    let corner_weight = (rel_x / r_mouth).powi(2);
+                    total_dy += (params.smile as f64 * -0.15) * corner_weight * w;
+                }
+
+                // 5. Face Shape
+                let d_forehead = ((p[0] - face.forehead[0]).hypot(p[1] - face.forehead[1])) / r_forehead;
+                if d_forehead < 1.0 {
+                    let w = (1.0 - d_forehead * d_forehead).powi(2);
+                    total_dy += (params.forehead as f64 * 0.08) * w;
+                }
+                let d_chin = ((p[0] - face.chin[0]).hypot(p[1] - face.chin[1])) / r_chin;
+                if d_chin < 1.0 {
+                    let w = (1.0 - d_chin * d_chin).powi(2);
+                    total_dy += -(params.chin_height as f64 * 0.08) * w;
+                }
+                let d_lj = ((p[0] - face.left_jaw[0]).hypot(p[1] - face.left_jaw[1])) / r_jaw;
+                if d_lj < 1.0 {
+                    let w = (1.0 - d_lj * d_lj).powi(2);
+                    total_dx += (params.jawline as f64 * 0.08) * w;
+                }
+                let d_rj = ((p[0] - face.right_jaw[0]).hypot(p[1] - face.right_jaw[1])) / r_jaw;
+                if d_rj < 1.0 {
+                    let w = (1.0 - d_rj * d_rj).powi(2);
+                    total_dx += -(params.jawline as f64 * 0.08) * w;
+                }
+                let d_face = ((p[0] - face.center[0]).hypot(p[1] - face.center[1])) / (fw * 0.5);
+                if d_face < 1.0 {
+                    let w = (1.0 - d_face * d_face).powi(2);
+                    let rel_x = p[0] - face.center[0];
+                    total_dx += rel_x * (params.face_width as f64 * -0.002) * w;
+                }
+
+                if let Some(cell) = self.d.get_mut(node_idx) {
+                    cell[0] += (total_dx * free_factor) as f32;
+                    cell[1] += (total_dy * free_factor) as f32;
+                }
+            }
+        }
+
+        dirty_bounds
+    }
+
     /// Applies one stroke. Returns the document rectangle whose output changed.
     pub fn apply_stroke(&mut self, s: &LiquifyStroke) -> Rect {
+        if s.tool == LiquifyTool::Face {
+            return Rect::EMPTY;
+        }
         self.cursor = None;
         match s.tool {
             LiquifyTool::LassoMask => return self.apply_lasso(s),

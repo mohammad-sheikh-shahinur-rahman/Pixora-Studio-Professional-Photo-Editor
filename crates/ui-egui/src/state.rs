@@ -176,6 +176,7 @@ pub enum Tool {
     CloneStamp,
     PatternStamp,
     HistoryBrush,
+    ArtHistoryBrush,
     Blur,
     Sharpen,
     Smudge,
@@ -206,7 +207,7 @@ pub enum Tool {
 }
 
 impl Tool {
-    pub const ALL: [Tool; 67] = [
+    pub const ALL: [Tool; 68] = [
         Tool::Move,
         Tool::Artboard,
         Tool::RectMarquee,
@@ -249,6 +250,7 @@ impl Tool {
         Tool::CloneStamp,
         Tool::PatternStamp,
         Tool::HistoryBrush,
+        Tool::ArtHistoryBrush,
         Tool::Blur,
         Tool::Sharpen,
         Tool::Smudge,
@@ -323,6 +325,7 @@ impl Tool {
             Tool::CloneStamp => "Clone Stamp Tool",
             Tool::PatternStamp => "Pattern Stamp Tool",
             Tool::HistoryBrush => "History Brush Tool",
+            Tool::ArtHistoryBrush => "Art History Brush Tool",
             Tool::Blur => "Blur Tool",
             Tool::Sharpen => "Sharpen Tool",
             Tool::Smudge => "Smudge Tool",
@@ -375,6 +378,7 @@ impl Tool {
                 | Tool::CloneStamp
                 | Tool::PatternStamp
                 | Tool::HistoryBrush
+                | Tool::ArtHistoryBrush
                 | Tool::Blur
                 | Tool::Sharpen
                 | Tool::Smudge
@@ -402,7 +406,7 @@ impl Tool {
             Tool::Zoom => 'Z',
             Tool::Remove | Tool::SpotHealing | Tool::Healing | Tool::Patch | Tool::ContentAwareMove | Tool::RedEye => 'J',
             Tool::CloneStamp | Tool::PatternStamp => 'S',
-            Tool::HistoryBrush => 'Y',
+            Tool::HistoryBrush | Tool::ArtHistoryBrush => 'Y',
             Tool::Blur | Tool::Sharpen | Tool::Smudge => '\0',
             // In the Marquee flyout, but M cycles only the Rectangular and Elliptical Marquee.
             Tool::SingleRowMarquee | Tool::SingleColumnMarquee => '\0',
@@ -488,6 +492,10 @@ pub struct Panels {
     /// floating window rather than a modal so the canvas stays usable while a gradient is edited.
     #[serde(default)]
     pub gradient_editor: bool,
+    #[serde(default = "yes")]
+    pub contextual_taskbar: bool,
+    #[serde(default)]
+    pub contextual_taskbar_pos: Option<[f32; 2]>,
 }
 
 impl Default for Panels {
@@ -511,6 +519,8 @@ impl Default for Panels {
             rail: true,
             menu_bar: true,
             gradient_editor: false,
+            contextual_taskbar: true,
+            contextual_taskbar_pos: None,
         }
     }
 }
@@ -779,6 +789,13 @@ pub struct ToolOptions {
     /// Perspective Crop's Show Grid (`perspective_crop_ui`); it shares W, H and the resolution above.
     #[serde(default = "yes")]
     pub perspective_crop_grid: bool,
+    /// Art History Brush: style ("tightShort" | "tightMedium" | "tightLong" | "looseMedium" | "looseLong" | "dab" | "tightCurl" | "looseCurl"), area (px), tolerance (%).
+    #[serde(default = "default_art_history_style")]
+    pub art_history_style: String,
+    #[serde(default = "default_art_history_area")]
+    pub art_history_area: f32,
+    #[serde(default)]
+    pub art_history_tolerance: f32,
     /// Crop overlay (#1919): the guide in the crop box, when it shows and its orientation
     /// (Photoshop's defaults: Rule of Thirds, Auto Show Overlay). See `crop_overlay`.
     #[serde(default)]
@@ -875,6 +892,14 @@ fn default_marquee_style() -> String {
 
 fn default_marquee_unit() -> String {
     "pixels".into()
+}
+
+fn default_art_history_style() -> String {
+    "tightShort".into()
+}
+
+fn default_art_history_area() -> f32 {
+    50.0
 }
 
 fn one() -> f32 {
@@ -1055,6 +1080,9 @@ impl Default for ToolOptions {
             eyedropper_size: 1,
             eyedropper_sample: default_eyedropper_sample(),
             eyedropper_ring: true,
+            art_history_style: default_art_history_style(),
+            art_history_area: default_art_history_area(),
+            art_history_tolerance: 0.0,
         }
     }
 }

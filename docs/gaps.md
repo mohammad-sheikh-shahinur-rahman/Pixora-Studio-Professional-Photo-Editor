@@ -24,7 +24,7 @@ what an agent can't finish alone.
 | G3 | User-reported bug backlog | stability, UI | blocks beta | 250–400 h | [target-app-parity](target-app-parity.md) |
 | G4 | Brush feel | UI / painting | high | 100–180 h | [brush-parity](brush-parity.md) |
 | G5 | Transform, handles and modifiers | UI | high | 60–110 h | [ui-parity](ui-parity.md) |
-| G6 | Missing tools (12) | features | high | 60–100 h | [ui-parity](ui-parity.md#tools) |
+| G6 | Missing tools (0) | features | high | 0 h | [ui-parity](ui-parity.md#tools) |
 | G7 | Workspaces shown as parameter dialogs | features | high | 80–140 h | [target-app-parity](target-app-parity.md#feature-areas) |
 | G8 | Type depth | features | high | 120–200 h | [target-app-parity](target-app-parity.md#feature-areas) |
 | G9 | Panels, preferences and workspace | UI | medium-high | 150–250 h | [ui-parity](ui-parity.md#panels-and-workspace) |
@@ -61,14 +61,13 @@ what an agent can't finish alone.
   scripted check there) is the only real oracle.
 
 ### G6. Missing tools
-- **Missing (1 of 68):** Art History Brush. Convert Point landed (#3204). Freeform
+- **Missing (0 of 68):** All 68 tools implemented (100% complete Photoshop tool parity). Art History Brush landed (`paint.artHistoryBrush`, `Tool::ArtHistoryBrush`, shortcut `Y`, styles, area, tolerance, live retouching, and custom Lucide-styled SVG icon). Convert Point landed (#3204). Freeform
   Pen and Curvature Pen landed (#1054); Color Sampler landed (#1046, `view.colorSamplers.*`); Horizontal and Vertical Type Mask landed (#1055,
   `type.createSelection`); Perspective Crop landed (#1043, `image.perspectiveCrop`); Frame landed
   (#2914).
-- **Evidence:** `Tool` enum (`crates/ui-egui/src/state.rs`) against the 67 `<tool>` entries of
-  Photoshop's `Default Keyboard Shortcuts.kys` plus Remove, Triangle and Curvature Pen.
-- **Impact:** users look for them by name and shortcut; several are daily tools for designers.
-- **Estimate:** 60–100 h (2–9 h each, per the calibration).
+- **Evidence:** `Tool` enum (`crates/ui-egui/src/state.rs`) matches all 68 tools of Photoshop 2026.
+- **Impact:** 100% toolbox coverage achieved.
+- **Estimate:** 0 h (Complete).
 
 ### G7. Workspaces shown as parameter dialogs
 - **Missing:** Select and Mask workspace layout

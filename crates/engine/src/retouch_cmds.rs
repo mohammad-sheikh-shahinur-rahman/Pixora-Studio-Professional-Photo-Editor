@@ -473,7 +473,7 @@ impl LiveRetouch {
                     cmd: if cmd == "paint.healingBrush" { "paint.healingBrush" } else { "paint.cloneStamp" },
                 }
             }
-            "paint.historyBrush" => LivePaint::History(history_source(s, id, p, cmd)?),
+            "paint.historyBrush" | "paint.artHistoryBrush" => LivePaint::History(history_source(s, id, p, cmd)?),
             other => return Err(bad(other, "live retouching strokes are the Clone Stamp, Healing Brush, History Brush and Pattern Stamp")),
         };
         Self::with_paint(s, cmd, p, stroke, id, paint, mode)
@@ -543,8 +543,8 @@ impl LiveRetouch {
                 let f = stroke.points.first().ok_or_else(|| bad(&self.cmd, "`points` is empty"))?;
                 crate::presets::clone_source::resolve(s, &self.params, (f.x, f.y), &self.cmd)?.0 == *map
             }
-            LivePaint::History(_) if self.cmd == "paint.historyBrush" => true,
-            _ => return Err(bad(&self.cmd, "only Clone Stamp and History Brush strokes commit their live pixels")),
+            LivePaint::History(_) if self.cmd == "paint.historyBrush" || self.cmd == "paint.artHistoryBrush" => true,
+            _ => return Err(bad(&self.cmd, "only Clone Stamp, History Brush and Art History Brush strokes commit their live pixels")),
         };
         if !source_unchanged || *self.brush != stroke.brush || id != self.id {
             return Err(bad(&self.cmd, "the brush, layer or clone source changed during the stroke"));
@@ -721,6 +721,92 @@ fn history_brush(s: &mut Session, p: &Value) -> Result<Value> {
         }
         let fmt = surf.format();
         let src = if src_surface.format() == fmt { src_surface } else { src_surface.convert(fmt) };
+        let (bounds, cov) = coverage(CMD, &stroke)?;
+        let paint = Region::read(&src, bounds);
+        Ok(apply_coverage(surf, bounds, &cov, stroke.brush.opacity, sel, lock, &paint, mode))
+    })?;
+    let mut r = json!({ "damage": damage_json(dmg) });
+    if from_live {
+        r["fromLive"] = json!(true);
+    }
+    Ok(r)
+}
+
+fn stylize_art_stroke(stroke: &mut Stroke, style: &str, area: f32) {
+    if stroke.points.is_empty() {
+        return;
+    }
+    let r = (stroke.brush.size.max(2.0) * 0.5) as f64;
+    let area_f64 = area as f64;
+    let mut new_pts = Vec::with_capacity(stroke.points.len() * 4);
+    for (i, pt) in stroke.points.iter().enumerate() {
+        let p = pt.pressure;
+        match style {
+            "dab" => {
+                let offset = (i as f64 * 1.618).sin() * area_f64.min(r);
+                new_pts.push(StrokePoint::new(pt.x + offset, pt.y + offset * 0.5, p));
+            }
+            "tightShort" | "tightMedium" | "tightLong" => {
+                let len_scale = match style {
+                    "tightLong" => 2.0,
+                    "tightMedium" => 1.2,
+                    _ => 0.6,
+                };
+                let angle = (i as f64 * 0.785).sin() * 0.6;
+                let dx = angle.cos() * r * len_scale;
+                let dy = angle.sin() * r * len_scale;
+                new_pts.push(StrokePoint::new(pt.x - dx, pt.y - dy, p * 0.8));
+                new_pts.push(StrokePoint::new(pt.x, pt.y, p));
+                new_pts.push(StrokePoint::new(pt.x + dx, pt.y + dy, p * 0.9));
+            }
+            "looseMedium" | "looseLong" => {
+                let len_scale = if style == "looseLong" { 3.0 } else { 1.8 };
+                let spread = area_f64.min(r * 2.0);
+                let angle = (i as f64 * 1.2).sin();
+                let dx = angle.cos() * (r + spread) * 0.5;
+                let dy = angle.sin() * (r + spread) * len_scale * 0.5;
+                new_pts.push(StrokePoint::new(pt.x - dx, pt.y - dy, p * 0.7));
+                new_pts.push(StrokePoint::new(pt.x, pt.y, p));
+                new_pts.push(StrokePoint::new(pt.x + dx, pt.y + dy, p * 0.8));
+            }
+            "tightCurl" | "looseCurl" => {
+                let radius = if style == "looseCurl" { (r * 1.5).min(area_f64.max(r)) } else { r * 0.8 };
+                let steps = 4;
+                for s in 0..steps {
+                    let theta = (s as f64 / steps as f64) * std::f64::consts::TAU + (i as f64 * 0.5);
+                    let cx = pt.x + theta.cos() * radius;
+                    let cy = pt.y + theta.sin() * radius;
+                    new_pts.push(StrokePoint::new(cx, cy, p));
+                }
+            }
+            _ => {
+                new_pts.push(*pt);
+            }
+        }
+    }
+    if !new_pts.is_empty() {
+        stroke.points = new_pts;
+    }
+}
+
+fn art_history_brush(s: &mut Session, p: &Value) -> Result<Value> {
+    const CMD: &str = "paint.artHistoryBrush";
+    let (mut stroke, id) = parse_brush(s, p, CMD)?;
+    let mode = blend_param(p, CMD)?;
+    let style = p.get("style").and_then(Value::as_str).unwrap_or("tightShort");
+    let area = p.get("area").and_then(Value::as_f64).map_or(50.0, |v| v as f32).clamp(0.0, 500.0);
+    reject_huge_stroke(CMD, &stroke)?;
+    let live = s.live_commit.take().filter(|l| l.matches(s, CMD, p, &stroke.points));
+    let from_live = live.is_some();
+    let src_surface = history_source(s, id, p, CMD)?;
+    let dmg = run_stroke(s, "Art History Brush", id, p, |_, surf, sel, lock| {
+        if let Some(l) = live {
+            *surf = l.surface;
+            return Ok(l.bounds);
+        }
+        let fmt = surf.format();
+        let src = if src_surface.format() == fmt { src_surface } else { src_surface.convert(fmt) };
+        stylize_art_stroke(&mut stroke, style, area);
         let (bounds, cov) = coverage(CMD, &stroke)?;
         let paint = Region::read(&src, bounds);
         Ok(apply_coverage(surf, bounds, &cov, stroke.brush.opacity, sel, lock, &paint, mode))
@@ -1677,6 +1763,18 @@ pub fn specs() -> Vec<CommandSpec> {
             ),
             enabled: has_pixel_layer,
             run: history_brush,
+            journal: true,
+        },
+        CommandSpec {
+            id: "paint.artHistoryBrush",
+            label: "Art History Brush",
+            menu: &[],
+            shortcut: None,
+            params: brush_params!(
+                r#","style":"tightShort|tightMedium|tightLong|looseMedium|looseLong|dab|tightCurl|looseCurl"="tightShort","area":0..500=50,"state":row,"snapshot":id"#
+            ),
+            enabled: has_pixel_layer,
+            run: art_history_brush,
             journal: true,
         },
     ]

@@ -45,6 +45,12 @@ pub struct CameraRawDialog {
     /// Proxy pixels (straight RGBA) and size.
     pub(crate) proxy: std::sync::Arc<Vec<[f32; 4]>>,
     pub(crate) selection: Option<std::sync::Arc<Vec<f32>>>,
+    pub(crate) base_selection: Option<std::sync::Arc<Vec<f32>>>,
+    pub mask_mode: String,
+    pub mask_invert: bool,
+    pub mask_pos: f32,
+    pub mask_radius: f32,
+    pub mask_feather: f32,
     pub(crate) pw: usize,
     pub(crate) ph: usize,
     full_w: usize,
@@ -85,6 +91,55 @@ pub struct CameraRawDialog {
     edit_origin: Option<CameraRaw>,
 }
 
+impl CameraRawDialog {
+    pub fn update_mask(&mut self) {
+        let (pw, ph) = (self.pw, self.ph);
+        if self.mask_mode == "none" {
+            self.selection = self.base_selection.clone();
+            return;
+        }
+        let count = pw * ph;
+        let mut mask = vec![1.0f32; count];
+        match self.mask_mode.as_str() {
+            "linear" => {
+                let pos = (self.mask_pos / 100.0).clamp(0.0, 1.0);
+                let feather = (self.mask_feather / 100.0).max(0.01);
+                for y in 0..ph {
+                    let t = y as f32 / ph.max(1) as f32;
+                    let v = ((t - pos + feather * 0.5) / feather).clamp(0.0, 1.0);
+                    for x in 0..pw {
+                        mask[y * pw + x] = v;
+                    }
+                }
+            }
+            "radial" => {
+                let (cx, cy) = (pw as f32 * 0.5, ph as f32 * 0.5);
+                let max_r = (pw.max(ph) as f32 * 0.5) * (self.mask_radius / 100.0).max(0.05);
+                let feather = (self.mask_feather / 100.0).max(0.01) * max_r;
+                for y in 0..ph {
+                    for x in 0..pw {
+                        let d = ((x as f32 - cx).powi(2) + (y as f32 - cy).powi(2)).sqrt();
+                        let v = 1.0 - ((d - (max_r - feather)) / feather.max(1.0)).clamp(0.0, 1.0);
+                        mask[y * pw + x] = v;
+                    }
+                }
+            }
+            "subject" => {
+                let skin = photocraft_algo::selection::skin_tones(&self.proxy, 45.0);
+                for (dest, s) in mask.iter_mut().zip(skin) {
+                    *dest = s;
+                }
+            }
+            _ => {}
+        }
+        if self.mask_invert {
+            for v in &mut mask {
+                *v = 1.0 - *v;
+            }
+        }
+        self.selection = Some(std::sync::Arc::new(mask));
+    }
+}
 impl CameraRawDialog {
     pub fn describe(&self, view: &crate::state::CameraRawScopeState, navigation: &crate::state::CameraRawPreviewState) -> Value {
         let h = self.histogram();
@@ -767,6 +822,7 @@ fn open_pixels(
         app.ui.camera_raw_scope.selected_region = false;
     }
     let float = surf.format().sample == photocraft_color::SampleType::F32;
+    let sel_arc = selection.map(std::sync::Arc::new);
     let mut d = CameraRawDialog {
         layer,
         layer_name: name,
@@ -782,7 +838,13 @@ fn open_pixels(
         preview_revision: 0,
         histogram_ms: 0.0,
         proxy: std::sync::Arc::new(proxy),
-        selection: selection.map(std::sync::Arc::new),
+        selection: sel_arc.clone(),
+        base_selection: sel_arc,
+        mask_mode: "none".into(),
+        mask_invert: false,
+        mask_pos: 50.0,
+        mask_radius: 50.0,
+        mask_feather: 50.0,
         pw,
         ph,
         full_w: w,
@@ -1350,9 +1412,40 @@ fn draw(app: &mut PhotocraftApp, ctx: &egui::Context, own_window: bool) {
         let mut dirty = false;
         egui::ScrollArea::vertical().id_salt("camera-raw-props").show(&mut props, |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
+            let (ts, tn) = (temp_stops(), tint_stops());
+            section(ui, "Masking", false, |ui| {
+                let modes = [
+                    ("none".to_string(), tl!("Entire Image")),
+                    ("linear".to_string(), tl!("Linear Gradient")),
+                    ("radial".to_string(), tl!("Radial Gradient")),
+                    ("subject".to_string(), tl!("Subject / Skin")),
+                ];
+                let mut mode = d.mask_mode.clone();
+                if widgets::dropdown(ui, "cr-mask-mode", &mut mode, &modes, 170.0) && mode != d.mask_mode {
+                    d.mask_mode = mode;
+                    d.update_mask();
+                    dirty = true;
+                }
+                if d.mask_mode != "none" {
+                    if widgets::checkbox(ui, &mut d.mask_invert, tl!("Invert Mask")).changed() {
+                        d.update_mask();
+                        dirty = true;
+                    }
+                    let prev_dirty = dirty;
+                    if d.mask_mode == "linear" {
+                        row(ui, &mut dirty, "Position", &mut d.mask_pos, 0.0..=100.0, None);
+                        row(ui, &mut dirty, "Feather", &mut d.mask_feather, 1.0..=100.0, None);
+                    } else if d.mask_mode == "radial" {
+                        row(ui, &mut dirty, "Radius", &mut d.mask_radius, 5.0..=100.0, None);
+                        row(ui, &mut dirty, "Feather", &mut d.mask_feather, 1.0..=100.0, None);
+                    }
+                    if dirty != prev_dirty {
+                        d.update_mask();
+                    }
+                }
+            });
             let p = &mut d.params;
             let alt = &mut d.scope.alt_tone;
-            let (ts, tn) = (temp_stops(), tint_stops());
             section(ui, "Light", true, |ui| {
                 tone_row(ui, &mut dirty, alt, ToneZone::Exposure, &mut p.exposure);
                 row(ui, &mut dirty, "Contrast", &mut p.contrast, -100.0..=100.0, None);

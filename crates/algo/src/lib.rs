@@ -229,6 +229,12 @@ pub enum FilterParams {
         radius: f32,
         threshold: f32,
     },
+    /// Neural Skin Smoothing: smoothness 0..100 %, glow 0..100 %, radius px.
+    SkinSmoothing {
+        smoothness: f32,
+        glow: f32,
+        radius: f32,
+    },
     /// Amount %, radius px, threshold levels.
     UnsharpMask {
         amount: f32,
@@ -569,6 +575,7 @@ impl FilterParams {
             FilterParams::SmartSharpen { radius, .. } => g(*radius),
             FilterParams::BoxBlur { radius }
             | FilterParams::SurfaceBlur { radius, .. }
+            | FilterParams::SkinSmoothing { radius, .. }
             | FilterParams::Median { radius }
             | FilterParams::DustAndScratches { radius, .. }
             | FilterParams::Minimum { radius, .. }
@@ -633,6 +640,7 @@ impl FilterParams {
             FilterParams::MotionBlur { .. } => "Motion Blur",
             FilterParams::RadialBlur { .. } => "Radial Blur",
             FilterParams::SurfaceBlur { .. } => "Surface Blur",
+            FilterParams::SkinSmoothing { .. } => "Skin Smoothing",
             FilterParams::UnsharpMask { .. } => "Unsharp Mask",
             FilterParams::SmartSharpen { .. } => "Smart Sharpen",
             FilterParams::HighPass { .. } => "High Pass",
@@ -758,6 +766,7 @@ pub fn kernel(params: &FilterParams, src: &Image, out: Rect, ctx: &Ctx) -> Vec<f
             blur::radial(src, out, ctx, *amount, *method, *quality, (*center_x, *center_y))
         }
         FilterParams::SurfaceBlur { radius, threshold } => blur::surface(src, out, ctx, *radius, *threshold),
+        FilterParams::SkinSmoothing { smoothness, glow, radius } => blur::skin_smoothing(src, out, ctx, *smoothness, *glow, *radius),
         FilterParams::UnsharpMask { amount, radius, threshold } => sharpen::unsharp(src, out, ctx, *amount, *radius, *threshold),
         FilterParams::SmartSharpen { amount, radius, reduce_noise } => sharpen::smart(src, out, ctx, *amount, *radius, *reduce_noise),
         FilterParams::HighPass { radius } => sharpen::high_pass(src, out, ctx, *radius),

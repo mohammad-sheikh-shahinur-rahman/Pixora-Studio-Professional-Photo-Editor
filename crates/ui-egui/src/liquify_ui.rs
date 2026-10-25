@@ -9,7 +9,9 @@
 //! OK runs `filter.liquify` with the same strokes and gets the same field.
 
 use egui::{Align2, Color32, FontId, Pos2, Rect as ERect, Sense, Stroke, TextureHandle, pos2, vec2};
-use photocraft_algo::liquify::{LiquifyField, LiquifyStroke, LiquifyTool, ProxyImage, auto_cell};
+use photocraft_algo::liquify::{
+    detect_faces, auto_cell, DetectedFace, FaceLiquifyParams, LiquifyField, LiquifyStroke, LiquifyTool, ProxyImage,
+};
 use photocraft_doc::{DocId, Document, LayerId};
 use photocraft_geom::Rect;
 use photocraft_raster::Surface;
@@ -45,6 +47,10 @@ pub struct LiquifyOpts {
     pub backdrop_mode: BackdropMode,
     pub backdrop_opacity: f32,
     pub reconstruct_amount: f32,
+    pub face_params: FaceLiquifyParams,
+    pub faces: Vec<DetectedFace>,
+    pub active_face: usize,
+    pub face_eyes_linked: bool,
 }
 
 /// Show Backdrop › Mode, as Photoshop draws them (#7609): In Front lays the backdrop over the
@@ -82,6 +88,10 @@ impl Default for LiquifyOpts {
             backdrop_mode: BackdropMode::InFront,
             backdrop_opacity: 50.0,
             reconstruct_amount: 100.0,
+            face_params: FaceLiquifyParams::default(),
+            faces: Vec::new(),
+            active_face: 0,
+            face_eyes_linked: true,
         }
     }
 }
@@ -531,6 +541,9 @@ fn open_on(
     let proxy = ProxyImage::new(&surf, canvas, PROXY_SIDE);
     let out = vec![[0u8; 4]; proxy.w * proxy.h];
     let center = [f64::from(canvas.x0 + canvas.x1) / 2.0, f64::from(canvas.y0 + canvas.y1) / 2.0];
+    let detected = detect_faces(&surf);
+    let mut opts = LiquifyOpts::default();
+    opts.faces = detected;
     let mut d = LiquifyDialog {
         document: st.doc.id,
         layer,
@@ -555,7 +568,7 @@ fn open_on(
         backdrop: None,
         mask_tex: None,
         mask_dirty: true,
-        opts: LiquifyOpts::default(),
+        opts,
         zoom: 0.0,
         center,
         hover: None,
@@ -780,6 +793,7 @@ pub fn keys(app: &mut PhotocraftApp, ctx: &egui::Context) {
         (egui::Key::F, LiquifyTool::Freeze),
         (egui::Key::D, LiquifyTool::Thaw),
         (egui::Key::L, LiquifyTool::LassoMask),
+        (egui::Key::A, LiquifyTool::Face),
     ];
     for (k, t) in tools {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, k)) {
@@ -801,6 +815,7 @@ fn tool_icon(t: LiquifyTool) -> &'static str {
         LiquifyTool::Freeze => "lock",
         LiquifyTool::Thaw => "lock-open",
         LiquifyTool::LassoMask => "lasso",
+        LiquifyTool::Face => "scan",
         _ => "circle",
     }
 }
@@ -817,6 +832,7 @@ fn shortcut(t: LiquifyTool) -> &'static str {
         LiquifyTool::Freeze => "F",
         LiquifyTool::Thaw => "D",
         LiquifyTool::LassoMask => "L",
+        LiquifyTool::Face => "A",
         _ => "",
     }
 }
@@ -967,6 +983,105 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                 }
             });
             widgets::hairline(ui);
+            widgets::section_label(ui, tl!("Face-Aware Liquify"));
+            if d.opts.faces.is_empty() {
+                ui.label(egui::RichText::new(tl!("No faces detected")).color(t.text_faint).size(11.0));
+            } else {
+                let face_count = d.opts.faces.len();
+                let face_names: Vec<(usize, String)> = (0..face_count).map(|idx| (idx, format!("Face #{}", idx + 1))).collect();
+                let face_refs: Vec<(usize, &str)> = face_names.iter().map(|(idx, name)| (*idx, name.as_str())).collect();
+                ui.horizontal(|ui| {
+                    ui.label(tl!("Select Face"));
+                    widgets::dropdown(ui, "liquify-active-face", &mut d.opts.active_face, &face_refs, 120.0);
+                });
+
+                let mut face_changed = false;
+                ui.collapsing(tl!("Eyes"), |ui| {
+                    ui.horizontal(|ui| {
+                        widgets::checkbox(ui, &mut d.opts.face_eyes_linked, tl!("Link Eyes"));
+                    });
+                    if widgets::slider_row(ui, tl!("Eye Size (L)"), &mut d.opts.face_params.eye_size_left, -100.0..=100.0, "", None).changed() {
+                        if d.opts.face_eyes_linked {
+                            d.opts.face_params.eye_size_right = d.opts.face_params.eye_size_left;
+                        }
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Eye Size (R)"), &mut d.opts.face_params.eye_size_right, -100.0..=100.0, "", None).changed() {
+                        if d.opts.face_eyes_linked {
+                            d.opts.face_params.eye_size_left = d.opts.face_params.eye_size_right;
+                        }
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Eye Height"), &mut d.opts.face_params.eye_height, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Eye Width"), &mut d.opts.face_params.eye_width, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Eye Tilt"), &mut d.opts.face_params.eye_tilt, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Eye Distance"), &mut d.opts.face_params.eye_distance, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                });
+
+                ui.collapsing(tl!("Nose"), |ui| {
+                    if widgets::slider_row(ui, tl!("Nose Height"), &mut d.opts.face_params.nose_height, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Nose Width"), &mut d.opts.face_params.nose_width, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                });
+
+                ui.collapsing(tl!("Mouth"), |ui| {
+                    if widgets::slider_row(ui, tl!("Smile"), &mut d.opts.face_params.smile, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Upper Lip"), &mut d.opts.face_params.upper_lip, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Lower Lip"), &mut d.opts.face_params.lower_lip, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Mouth Width"), &mut d.opts.face_params.mouth_width, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Mouth Height"), &mut d.opts.face_params.mouth_height, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                });
+
+                ui.collapsing(tl!("Face Shape"), |ui| {
+                    if widgets::slider_row(ui, tl!("Forehead"), &mut d.opts.face_params.forehead, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Chin Height"), &mut d.opts.face_params.chin_height, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Jawline"), &mut d.opts.face_params.jawline, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                    if widgets::slider_row(ui, tl!("Face Width"), &mut d.opts.face_params.face_width, -100.0..=100.0, "", None).changed() {
+                        face_changed = true;
+                    }
+                });
+
+                if widgets::secondary_button(ui, tl!("Reset Face"), 110.0).clicked() {
+                    d.opts.face_params = FaceLiquifyParams::default();
+                    face_changed = true;
+                }
+
+                if face_changed {
+                    if let Some(face) = d.opts.faces.get(d.opts.active_face) {
+                        let dirty = d.field.apply_face(face, &d.opts.face_params);
+                        d.mark(dirty, false);
+                        d.render_dirty();
+                    }
+                }
+            }
+            widgets::hairline(ui);
             widgets::section_label(ui, tl!("Mask Options"));
             ui.horizontal(|ui| {
                 if widgets::secondary_button(ui, tl!("None"), 70.0).clicked() {
@@ -1104,6 +1219,9 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
         }
         if d.opts.show_mesh {
             draw_mesh(d, &clip, area);
+        }
+        if d.opts.tool == LiquifyTool::Face {
+            draw_face_landmarks(d, &clip, area);
         }
         // The lasso polygon being drawn (danger colour freezes, accent thaws; the mask overlay paints the
         // applied area red like the Freeze brush).
@@ -1255,6 +1373,28 @@ fn draw_mesh(d: &LiquifyDialog, painter: &egui::Painter, area: ERect) {
                 }
             }
         }
+    }
+}
+
+fn draw_face_landmarks(d: &LiquifyDialog, clip: &egui::Painter, area: ERect) {
+    if let Some(face) = d.opts.faces.get(d.opts.active_face) {
+        let to_p = |pt: [f64; 2]| to_screen(d, area, pt);
+        let fb = ERect::from_min_max(
+            to_screen(d, area, [face.bounds.x0 as f64, face.bounds.y0 as f64]),
+            to_screen(d, area, [face.bounds.x1 as f64, face.bounds.y1 as f64]),
+        );
+        clip.rect_stroke(fb, 8.0, Stroke::new(1.0, Color32::from_rgba_unmultiplied(80, 180, 255, 140)), egui::StrokeKind::Inside);
+
+        let stroke = Stroke::new(1.5, Color32::from_rgba_unmultiplied(100, 200, 255, 200));
+        let r_eye = (face.bounds.width() as f32 * 0.12 * d.zoom).max(4.0);
+        clip.circle_stroke(to_p(face.left_eye), r_eye, stroke);
+        clip.circle_stroke(to_p(face.right_eye), r_eye, stroke);
+        clip.circle_filled(to_p(face.left_eye), 3.0, Color32::WHITE);
+        clip.circle_filled(to_p(face.right_eye), 3.0, Color32::WHITE);
+        clip.circle_filled(to_p(face.nose), 3.0, Color32::WHITE);
+        let r_mouth = (face.bounds.width() as f32 * 0.16 * d.zoom).max(6.0);
+        clip.circle_stroke(to_p(face.mouth), r_mouth, stroke);
+        clip.circle_filled(to_p(face.mouth), 3.0, Color32::WHITE);
     }
 }
 

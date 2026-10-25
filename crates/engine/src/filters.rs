@@ -99,8 +99,15 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
             center_x: f(p, "centerX", 0.5),
             center_y: f(p, "centerY", 0.5),
         },
-        "filter.blur.surfaceBlur" | "filter.retouch.skinSmoothing" => {
+        "filter.blur.surfaceBlur" => {
             FilterParams::SurfaceBlur { radius: f(p, "radius", 5.0).clamp(1.0, 100.0), threshold: f(p, "threshold", 15.0).clamp(2.0, 255.0) }
+        }
+        "filter.neural.skinSmoothing" | "filter.retouch.skinSmoothing" => {
+            FilterParams::SkinSmoothing {
+                smoothness: f(p, "smoothness", 25.0).clamp(0.0, 100.0),
+                glow: f(p, "glow", 15.0).clamp(0.0, 100.0),
+                radius: f(p, "radius", 8.0).clamp(1.0, 50.0),
+            }
         }
         "filter.sharpen.unsharpMask" => FilterParams::UnsharpMask {
             amount: f(p, "amount", 50.0).clamp(1.0, 500.0),
@@ -423,7 +430,8 @@ pub fn specs() -> Vec<CommandSpec> {
             r##"{"amount":1..100=10,"method":"spin|zoom","quality":"draft|good|best"="good","centerX":0..1=0.5,"centerY":0..1=0.5}"##
         ),
         filter_cmd!("filter.blur.surfaceBlur", "Surface Blur…", ["Filter", "Blur"], r##"{"radius":1..100=5,"threshold":2..255=15}"##),
-        filter_cmd!("filter.retouch.skinSmoothing", "Skin Smoothing…", ["Filter", "Retouch"], r##"{"radius":1..50=6,"threshold":2..100=20}"##),
+        filter_cmd!("filter.neural.skinSmoothing", "Skin Smoothing…", ["Filter", "Neural Filters"], r##"{"smoothness":0..100=25,"glow":0..100=15,"radius":1..50=8}"##),
+        filter_cmd!("filter.retouch.skinSmoothing", "Skin Smoothing…", ["Filter", "Retouch"], r##"{"smoothness":0..100=25,"glow":0..100=15,"radius":1..50=8}"##),
         filter_cmd!(
             "filter.sharpen.unsharpMask",
             "Unsharp Mask…",

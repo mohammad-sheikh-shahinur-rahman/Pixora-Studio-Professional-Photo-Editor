@@ -628,6 +628,67 @@ pub(crate) fn surface(src: &Image, out: Rect, ctx: &Ctx, radius: f32, threshold:
     surface_direct(src, out, ctx, r, t)
 }
 
+/// Neural Skin Smoothing: edge-preserving bilateral filtering targeted to detected skin tones,
+/// preserving facial landmarks (eyes, eyebrows, lips, contours) while reducing blemishes and pores,
+/// with an optional skin tone radiance / glow balance.
+pub(crate) fn skin_smoothing(src: &Image, out: Rect, ctx: &Ctx, smoothness: f32, glow: f32, radius: f32) -> Vec<f32> {
+    let threshold = 8.0 + (smoothness.clamp(0.0, 100.0) / 100.0) * 32.0;
+    let rad = radius.clamp(1.0, 50.0);
+    let mut blurred = surface(src, out, ctx, rad, threshold);
+    let n = src.ch;
+    let ow = out.width() as usize;
+    let oh = out.height() as usize;
+    if blurred.len() < ow * oh * n {
+        return blurred;
+    }
+
+    let mut rgba_samples = Vec::with_capacity(ow * oh);
+    for y in out.y0..out.y1 {
+        for x in out.x0..out.x1 {
+            let px = src.px(x, y);
+            let r = px.first().copied().unwrap_or(0.0);
+            let g = px.get(1).copied().unwrap_or(r);
+            let b = px.get(2).copied().unwrap_or(r);
+            let a = if n == 4 { px.get(3).copied().unwrap_or(1.0) } else { 1.0 };
+            rgba_samples.push([r, g, b, a]);
+        }
+    }
+
+    let skin_mask = crate::selection::skin_tones(&rgba_samples, 45.0);
+    let glow_amount: f32 = (glow.clamp(0.0, 100.0) / 100.0) * 0.15;
+
+    for (i, (&mask, orig)) in skin_mask.iter().zip(&rgba_samples).enumerate() {
+        let idx = i * n;
+        if mask <= 0.001 {
+            for c in 0..n {
+                if let Some(dest) = blurred.get_mut(idx + c) {
+                    *dest = orig.get(c).copied().unwrap_or(*dest);
+                }
+            }
+        } else {
+            for c in 0..n.min(3) {
+                if let Some(dest) = blurred.get_mut(idx + c) {
+                    let o = orig[c];
+                    let blended = o + (*dest - o) * mask;
+                    if glow_amount > 0.0 && n >= 3 {
+                        let y_luma: f32 = 0.299 * orig[0] + 0.587 * orig[1] + 0.114 * orig[2];
+                        let midtone: f32 = (1.0f32 - (y_luma - 0.5f32).abs() * 2.0f32).max(0.0f32);
+                        let tint = match c {
+                            0 => 1.1f32,
+                            1 => 0.8f32,
+                            _ => 0.4f32,
+                        };
+                        *dest = (blended + glow_amount * tint * midtone * mask).clamp(0.0, 1.0);
+                    } else {
+                        *dest = blended;
+                    }
+                }
+            }
+        }
+    }
+    blurred
+}
+
 /// Radius from which [`surface_ranked`] beats [`surface_direct`] (measured by `surface_timing`).
 const RANKED_MIN_RADIUS: i32 = 10;
 

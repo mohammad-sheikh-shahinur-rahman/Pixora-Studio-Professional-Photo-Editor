@@ -4,6 +4,7 @@
 //! the Background layer into a normal layer first and has no menu item.
 
 use photocraft_algo::matting::{self, RefineParams};
+use photocraft_algo::selection::{Region, SelectionMode, combine_region};
 use photocraft_algo::segment::subject;
 use photocraft_doc::{Document, Layer, LayerContent, LayerMask};
 use photocraft_geom::Rect;
@@ -89,17 +90,87 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Remove Background command spec: accessible in Select menu and Properties Quick Actions.
+const REFINE_HAIR_PARAMS: RefineParams = RefineParams {
+    radius: 3.5,
+    smart_radius: true,
+    smooth: 2.0,
+    feather: 0.2,
+    contrast: 15.0,
+    shift_edge: 0.0,
+};
+
+fn has_doc(s: &Session) -> std::result::Result<(), String> {
+    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+}
+
+fn run_refine_hair(s: &mut Session, p: &Value) -> Result<Value> {
+    let id = layer_param(s, p)?;
+    let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
+    let sample_all = p.get("sampleAllLayers").and_then(Value::as_bool).unwrap_or(false);
+    let area = doc.bounds();
+    crate::jobs::edit_job(
+        s,
+        "Refine Hair",
+        move |doc, _, ctx| {
+            let found = if let Some(sel_surf) = &doc.selection {
+                let r = sel_surf.content_bounds();
+                let mut mask = Vec::with_capacity(r.width() as usize * r.height() as usize);
+                for y in r.y0..r.y1 {
+                    for x in r.x0..r.x1 {
+                        mask.push((sel_surf.sample_channel(x, y, 0).clamp(0.0, 1.0) * 255.0).round() as u8);
+                    }
+                }
+                Some(Region { bbox: r, mask })
+            } else {
+                ctx.stage(0.1, 0.6, "Finding subject", |ctl| {
+                    with_doc_sampler(doc, Some(id), sample_all, |smp, _| subject::select_subject_with(smp, area, ctl))
+                })
+                .map_err(|_| EngineError::Cancelled)?
+            };
+            let mut region = found.ok_or_else(|| EngineError::Other("no subject found to refine hair for".into()))?;
+            if ctx.cancelled() {
+                return Err(EngineError::Cancelled);
+            }
+            ctx.progress(0.6, "Refining hair edges");
+            let refined = with_doc_sampler(doc, Some(id), sample_all, |smp, _| {
+                matting::refine_mask(smp, &matting::region_reader(&region), region.bbox, area, &REFINE_HAIR_PARAMS)
+            });
+            region = refined.unwrap_or(region);
+            if ctx.cancelled() {
+                return Err(EngineError::Cancelled);
+            }
+            let b = region.bbox;
+            doc.selection = combine_region(None, Some(&region), SelectionMode::Replace);
+            Ok([b.x0, b.y0, b.width() as i32, b.height() as i32])
+        },
+        move |bounds| json!({ "layer": id.0, "bounds": bounds }),
+    )
+}
+
+/// Remove Background command spec: accessible in Select menu and Properties Quick Actions.
 pub fn specs() -> Vec<CommandSpec> {
-    vec![CommandSpec {
-        id: CMD,
-        label: "Remove Background",
-        menu: &["Select"],
-        shortcut: None,
-        params: r##"{"layer":id?,"sampleAllLayers":bool=false,"refine":bool=true} → {layer,bounds} (adds a layer mask from Select Subject; the Background becomes a normal layer)"##,
-        enabled,
-        run,
-        journal: true,
-    }]
+    vec![
+        CommandSpec {
+            id: CMD,
+            label: "Remove Background",
+            menu: &["Select"],
+            shortcut: None,
+            params: r##"{"layer":id?,"sampleAllLayers":bool=false,"refine":bool=true} → {layer,bounds} (adds a layer mask from Select Subject; the Background becomes a normal layer)"##,
+            enabled,
+            run,
+            journal: true,
+        },
+        CommandSpec {
+            id: "select.refineHair",
+            label: "Refine Hair",
+            menu: &["Select"],
+            shortcut: None,
+            params: r##"{"layer":id?,"sampleAllLayers":bool=false} → {layer,bounds} (refines hair and fine details along subject edges)"##,
+            enabled: has_doc,
+            run: run_refine_hair,
+            journal: true,
+        },
+    ]
 }
 
 #[cfg(test)]

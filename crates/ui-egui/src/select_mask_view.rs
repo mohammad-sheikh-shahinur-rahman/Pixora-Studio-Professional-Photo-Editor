@@ -206,6 +206,17 @@ pub fn controls(ui: &mut egui::Ui, fields: &mut Map<String, Value>) {
 /// The Refine Edge Brush (R): painting on the canvas sets where edge refinement happens.
 fn brush_controls(ui: &mut egui::Ui, fields: &mut Map<String, Value>) {
     let t = Tokens::get(ui.ctx());
+    ui.horizontal(|ui| {
+        if crate::widgets::secondary_button(ui, tl!("Refine Hair"), 0.0)
+            .on_hover_text(tl!("Isolate fine hair and fur along subject boundaries"))
+            .clicked()
+        {
+            fields.insert("smartRadius".into(), json!(true));
+            fields.insert("radius".into(), json!(3.5));
+            fields.insert("contrast".into(), json!(15.0));
+        }
+    });
+    ui.add_space(4.0);
     let mut on = brush_on(fields);
     crate::widgets::checkbox(ui, &mut on, tl!("Refine Edge Brush (R)"));
     fields.insert("__brush".into(), json!(on));

@@ -172,6 +172,20 @@ fn lookup_params(key: &str) -> Value {
     }
 }
 
+fn lut_preview_colors(id: &str) -> (egui::Color32, egui::Color32) {
+    match id {
+        "warm" => (egui::Color32::from_rgb(230, 160, 90), egui::Color32::from_rgb(180, 100, 40)),
+        "cool" => (egui::Color32::from_rgb(100, 170, 220), egui::Color32::from_rgb(40, 90, 160)),
+        "tealOrange" => (egui::Color32::from_rgb(40, 150, 160), egui::Color32::from_rgb(235, 140, 60)),
+        "bleachBypass" => (egui::Color32::from_rgb(180, 180, 175), egui::Color32::from_rgb(70, 70, 65)),
+        "fadedFilm" => (egui::Color32::from_rgb(215, 185, 170), egui::Color32::from_rgb(130, 115, 120)),
+        "dayForNight" => (egui::Color32::from_rgb(40, 60, 110), egui::Color32::from_rgb(15, 20, 45)),
+        "monoContrast" => (egui::Color32::from_rgb(220, 220, 220), egui::Color32::from_rgb(30, 30, 30)),
+        "crossProcess" => (egui::Color32::from_rgb(70, 180, 140), egui::Color32::from_rgb(190, 60, 140)),
+        _ => (egui::Color32::from_rgb(150, 150, 150), egui::Color32::from_rgb(80, 80, 80)),
+    }
+}
+
 pub fn color_lookup_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: LayerId, adj: &Adjustment) {
     let t = Tokens::get(ui.ctx());
     let Adjustment::ColorLookup { name, lut, size, tetrahedral, dither } = adj else {
@@ -221,6 +235,28 @@ pub fn color_lookup_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, id: Layer
             } else if sel != current && sel != "custom" {
                 params = Some(lookup_params(&sel));
             }
+        }
+    });
+    ui.add_space(4.0);
+    ui.label(egui::RichText::new(tl!("Live Presets")).color(t.text_dim).small());
+    ui.horizontal_wrapped(|ui| {
+        for (lut_id, label) in builtins {
+            let (c1, c2) = lut_preview_colors(lut_id);
+            let (rect, resp) = ui.allocate_exact_size(egui::vec2(28.0, 18.0), egui::Sense::click());
+            let painter = ui.painter();
+            let is_selected = current == *lut_id;
+            painter.rect_filled(egui::Rect::from_min_max(rect.min, egui::pos2(rect.center().x, rect.max.y)), 2.0, c1);
+            painter.rect_filled(egui::Rect::from_min_max(egui::pos2(rect.center().x, rect.min.y), rect.max), 2.0, c2);
+            let stroke_color = if is_selected { t.accent } else if resp.hovered() { t.text } else { t.separator };
+            painter.rect_stroke(rect, 2.0, egui::Stroke::new(if is_selected { 2.0 } else { 1.0 }, stroke_color), egui::StrokeKind::Inside);
+            if resp.hovered() {
+                app.live_adjust = Some((id, json!({"lut": lut_id})));
+            }
+            if resp.clicked() {
+                sel = (*lut_id).to_string();
+                params = Some(lookup_params(lut_id));
+            }
+            resp.on_hover_text(label);
         }
     });
     if cycling_preview {

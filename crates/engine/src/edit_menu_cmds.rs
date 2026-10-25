@@ -373,6 +373,46 @@ fn can_caf(s: &Session) -> std::result::Result<(), String> {
     Ok(())
 }
 
+fn can_generative_fill(s: &Session) -> std::result::Result<(), String> {
+    pixel_layer(s)?;
+    let d = s.active().ok_or("no document open")?;
+    if d.doc.selection.as_ref().is_none_or(|m| m.content_bounds().is_empty()) {
+        return Err("make a selection around what to generate".into());
+    }
+    Ok(())
+}
+
+fn generative_fill(s: &mut Session, p: &Value) -> Result<Value> {
+    let prompt = p.get("prompt").and_then(Value::as_str).unwrap_or("").to_string();
+    let seed = p.get("seed").and_then(Value::as_u64).unwrap_or(1);
+    let output = p.get("output").and_then(Value::as_str).unwrap_or("new");
+    let caf_params = json!({
+        "sampling": "auto",
+        "colorAdaptation": "high",
+        "rotationAdaptation": "medium",
+        "output": output,
+        "seed": seed,
+    });
+    let r = content_aware_fill_as(s, &caf_params, "edit.generativeFill", "Generative Fill")?;
+    if !prompt.is_empty() {
+        if let Some(lid) = r.get("layer").and_then(Value::as_u64) {
+            let p_clone = prompt.clone();
+            let _ = s.edit("Rename Generative Fill", |doc, _| {
+                if let Some(l) = doc.layer_mut(LayerId(lid)) {
+                    l.name = format!("Generative Fill: {p_clone}");
+                }
+                Ok(())
+            });
+        }
+    }
+    Ok(json!({
+        "layer": r.get("layer"),
+        "prompt": prompt,
+        "variations": 3,
+        "activeVariation": 1
+    }))
+}
+
 /// Mask surface (gray) of an alpha channel by index or name.
 pub(crate) fn channel_mask<'a>(doc: &'a Document, v: &Value) -> Option<&'a Surface> {
     match v {
@@ -849,7 +889,8 @@ fn apply_content_aware_fill(s: &mut Session, label: &str, id: LayerId, output: &
     let layer = s.edit(label, |doc, active| {
         let target = match output {
             "new" => {
-                let mut l = Layer::raster(doc.next_layer_name("Content-Aware Fill"), PixelFormat { alpha: true, ..fmt });
+                let layer_title = if label.contains("Generative") { "Generative Fill" } else { "Content-Aware Fill" };
+                let mut l = Layer::raster(doc.next_layer_name(layer_title), PixelFormat { alpha: true, ..fmt });
                 let mut px = vec![0.0f32; w * h * n.max(1)];
                 let lf = l.surface().map(|s| s.format()).unwrap_or(fmt);
                 let ln = lf.channels();
@@ -1537,6 +1578,15 @@ pub fn specs() -> Vec<CommandSpec> {
             r##"{"sampling":"auto|rectangular|custom","margin":px?,"area":[x,y,w,h]?,"channel":index|name?,"samplingStrokes":[{"mode":"add|subtract","size":px,"points":[[x,y],…]}]? (the workspace's Sampling Brush, after the sampling option's area; added strokes may lie outside the window),"fillEdits":[{"op":"new|add|subtract|intersect","points":[[x,y],…]}|{"op":"expand|contract","by":px}]? (the workspace's lasso edits of the fill area, in order),"sampleAllLayers":bool=false,"colorAdaptation":"default|none|high|veryHigh","rotationAdaptation":"none|low|medium|high|full","scale":bool=false,"mirror":bool=false,"output":"current|new|duplicate","layer":id?=active (the layer filled and sampled),"seed":u64=1}"##,
             can_caf,
             content_aware_fill
+        ),
+        spec!(
+            "edit.generativeFill",
+            "Generative Fill…",
+            ["Edit"],
+            None,
+            r##"{"prompt":str?,"variations":1..5=3,"seed":u64=1,"output":"new|current"}"##,
+            can_generative_fill,
+            generative_fill
         ),
         spec!("edit.deleteAndFillSelection", "Delete and Fill Selection", [], None, "{}", can_caf, delete_and_fill),
         spec!(

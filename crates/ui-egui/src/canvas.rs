@@ -725,6 +725,7 @@ fn live_retouch_command(tool: Tool) -> Option<&'static str> {
         Tool::CloneStamp => Some("paint.cloneStamp"),
         Tool::Healing => Some("paint.healingBrush"),
         Tool::HistoryBrush => Some("paint.historyBrush"),
+        Tool::ArtHistoryBrush => Some("paint.artHistoryBrush"),
         Tool::PatternStamp => Some("paint.patternStamp"),
         Tool::BackgroundEraser => Some("paint.backgroundEraser"),
         _ => None,
@@ -876,7 +877,14 @@ fn begin_live_stroke(app: &PhotocraftApp) -> Option<LiveStroke> {
         EngineStroke::Dab(photocraft_engine::eraser_cmds::live_background_eraser(&app.session, &p).ok()?)
     } else if let Some(cmd) = live_retouch_command(d.tool) {
         // The params `retouch_ui::finish_stroke` commits.
-        let mut p = if d.tool == Tool::HistoryBrush { json!({}) } else { crate::retouch_ui::clone_params(app)? };
+        let mut p = if d.tool == Tool::HistoryBrush {
+            json!({})
+        } else if d.tool == Tool::ArtHistoryBrush {
+            let o = &app.ui.tool_options;
+            json!({ "style": o.art_history_style, "area": o.art_history_area, "tolerance": o.art_history_tolerance })
+        } else {
+            crate::retouch_ui::clone_params(app)?
+        };
         p["points"] = json!(d.points);
         p["target"] = paint_target(app);
         EngineStroke::Retouch(photocraft_engine::retouch_cmds::LiveRetouch::begin(&app.session, cmd, &p).ok()?)
@@ -938,7 +946,7 @@ pub(crate) fn live_retouch_points(app: &PhotocraftApp) -> Option<Vec<photocraft_
 /// stroke again.
 fn offer_live_retouch(app: &mut PhotocraftApp, d: &Drag) {
     let dab = crate::retouch_ui::dab_params(app, d.tool).is_some();
-    if !dab && !matches!(d.tool, Tool::CloneStamp | Tool::HistoryBrush) {
+    if !dab && !matches!(d.tool, Tool::CloneStamp | Tool::HistoryBrush | Tool::ArtHistoryBrush) {
         return;
     }
     let Some(LiveStroke { stroke, fed, .. }) = app.live_stroke.take() else { return };
@@ -1005,6 +1013,7 @@ pub(crate) fn freehand_tool(tool: Tool) -> bool {
             | Tool::Eraser
             | Tool::BackgroundEraser
             | Tool::HistoryBrush
+            | Tool::ArtHistoryBrush
             | Tool::Remove
             | Tool::SpotHealing
             | Tool::Healing
@@ -2545,6 +2554,7 @@ pub fn document_area(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     crate::layer_transfer::finish(app, ui.ctx());
     // Once a frame, not per document view: the right-click or options-bar Brush Preset picker.
     crate::paint_mouse::show_picker(app, ui.ctx());
+    crate::contextual_bar::show(app, ui);
 }
 
 /// Window › Arrange tiles: each document shown with its tile in `rect`, or `None` when the

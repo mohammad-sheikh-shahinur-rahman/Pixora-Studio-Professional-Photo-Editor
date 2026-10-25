@@ -221,6 +221,7 @@ pub fn option_keys(tool: Tool) -> &'static [&'static str] {
         | Tool::Hand
         | Tool::RotateView
         | Tool::HistoryBrush
+        | Tool::ArtHistoryBrush
         | Tool::PathSelection
         | Tool::DirectSelection
         | Tool::SliceSelect
