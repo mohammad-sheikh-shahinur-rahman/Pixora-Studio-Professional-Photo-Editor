@@ -9,8 +9,11 @@
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication
           Theme="hyperlinkLicense"
+          ThemeFile="$(var.ThemeFile)"
+          LocalizationFile="$(var.LocalizationFile)"
           LogoFile="$(var.LogoFile)"
           LicenseUrl="https://pixora.amadersomaj.com" />
+      <Payload SourceFile="$(var.IconPath)" Name="pixora.ico" />
     </BootstrapperApplication>
 
     <Chain>

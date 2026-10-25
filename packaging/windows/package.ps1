@@ -154,6 +154,8 @@ if (Test-Path (Join-Path $PSScriptRoot 'bundle.wxs')) {
       -ext WixToolset.BootstrapperApplications.wixext `
       -d "Version=$MsiVersion" `
       -d "IconPath=$(Join-Path $Root 'assets\app-icon\pixora.ico')" `
+      -d "ThemeFile=$(Join-Path $PSScriptRoot 'HyperlinkTheme.xml')" `
+      -d "LocalizationFile=$(Join-Path $PSScriptRoot 'HyperlinkTheme.wxl')" `
       -d "LogoFile=$(Join-Path $Root 'assets\app-icon\hicolor\64x64\apps\com.amadersomaj.pixorastudio.png')" `
       -d "MsiPath=$Msi" `
       -o $InstallerExe
