@@ -18,7 +18,8 @@ use serde_json::{Value, json};
 use crate::prefs::{Preferences, alternate_keys, normalize_shortcut};
 
 /// The built-in set's name: the default bindings.
-pub const DEFAULTS_NAME: &str = "PhotoCraft Defaults";
+pub const DEFAULTS_NAME: &str = "Pixora Studio Defaults";
+pub const LEGACY_DEFAULTS_NAME: &str = "PhotoCraft Defaults";
 /// Saved sets are small; the cap keeps a hostile settings file or call bounded.
 pub const MAX_SETS: usize = 64;
 /// Longest set name, in characters.
@@ -93,7 +94,7 @@ pub fn set_name(name: &str) -> Result<String, String> {
     if n.chars().any(char::is_control) {
         return Err("a set name can't contain control characters".into());
     }
-    if n.eq_ignore_ascii_case(DEFAULTS_NAME) {
+    if n.eq_ignore_ascii_case(DEFAULTS_NAME) || n.eq_ignore_ascii_case(LEGACY_DEFAULTS_NAME) {
         return Err(format!("`{DEFAULTS_NAME}` is the built-in set"));
     }
     Ok(n.to_string())
@@ -125,7 +126,7 @@ pub fn modified(p: &Preferences) -> bool {
 pub fn load(next: &mut Preferences, p: &Value) -> Result<bool, String> {
     let Some(v) = p.get("useSet") else { return Ok(false) };
     let name = v.as_str().ok_or("`useSet` is a set name")?.trim();
-    if name.is_empty() || name.eq_ignore_ascii_case(DEFAULTS_NAME) {
+    if name.is_empty() || name.eq_ignore_ascii_case(DEFAULTS_NAME) || name.eq_ignore_ascii_case(LEGACY_DEFAULTS_NAME) {
         ShortcutSet::default().load_into(next);
         next.shortcut_set = String::new();
     } else {
@@ -178,7 +179,7 @@ pub fn store(next: &mut Preferences, p: &Value) -> Result<bool, String> {
     }
     if let Some(v) = p.get("activeSet") {
         let name = v.as_str().ok_or("`activeSet` is a set name")?.trim();
-        if name.is_empty() || name.eq_ignore_ascii_case(DEFAULTS_NAME) {
+        if name.is_empty() || name.eq_ignore_ascii_case(DEFAULTS_NAME) || name.eq_ignore_ascii_case(LEGACY_DEFAULTS_NAME) {
             next.shortcut_set = String::new();
         } else if next.shortcut_sets.contains_key(name) {
             next.shortcut_set = name.to_string();
@@ -375,7 +376,7 @@ mod tests {
     #[test]
     fn bad_names_sets_and_params_are_errors() {
         let mut p = prefs();
-        for name in ["", "   ", "PhotoCraft defaults", "a\u{7}b", &"x".repeat(65)] {
+        for name in ["", "   ", "Pixora Studio defaults", "PhotoCraft defaults", "a\u{7}b", &"x".repeat(65)] {
             assert!(store(&mut p, &json!({"saveSet": name})).is_err(), "{name:?}");
         }
         assert!(load(&mut p, &json!({"useSet": "Nope"})).is_err());
@@ -404,7 +405,7 @@ mod tests {
         assert!(modified(&p), "activeSet names the set; it doesn't load it");
         load(&mut p, &json!({"useSet": "A"})).unwrap();
         assert!(!modified(&p));
-        store(&mut p, &json!({"activeSet": "PhotoCraft Defaults"})).unwrap();
+        store(&mut p, &json!({"activeSet": "Pixora Studio Defaults"})).unwrap();
         assert_eq!(p.shortcut_set, "");
     }
 

@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  Build, sign and package PhotoCraft for Windows.
+  Build, sign and package Pixora Studio for Windows.
 
 .DESCRIPTION
   Produces, in $env:DIST (default: dist/release):
-    photocraft-<version>-windows-<arch>.msi            per-machine installer (WiX v5)
-    photocraft-<version>-windows-<arch>-portable.zip   photocraft.exe + photocraft-cli.exe + portable.txt
+    pixora-studio-<version>-windows-<arch>.msi            per-machine installer (WiX v5)
+    pixora-studio-<version>-windows-<arch>-portable.zip   photocraft.exe + photocraft-cli.exe + portable.txt
 
   The binaries link the C runtime statically (+crt-static), so neither the MSI nor the portable
   zip needs the Visual C++ redistributable. Signing is delegated to sign.ps1 (skipped with a
@@ -54,7 +54,7 @@ New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 if (-not $env:PHOTOCRAFT_BUILD_SHA) { $env:PHOTOCRAFT_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null) }
 if (-not $env:PHOTOCRAFT_BUILD_DATE) { $env:PHOTOCRAFT_BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') }
 
-Write-Output "PhotoCraft $Version for Windows $Arch ($Target)"
+Write-Output "Pixora Studio $Version for Windows $Arch ($Target)"
 
 if (-not $SkipBuild) {
   # Static CRT: no VC++ redistributable needed. Scoped to the target so host build scripts and
@@ -127,15 +127,15 @@ function New-InstallerArt([string] $IconPng, [string] $BannerOut, [string] $Dial
 }
 $Banner = Join-Path $Stage 'installer-banner.bmp'
 $Dialog = Join-Path $Stage 'installer-dialog.bmp'
-New-InstallerArt (Join-Path $Root 'assets\app-icon\hicolor\256x256\apps\ai.storyteller.photocraft.png') $Banner $Dialog
+New-InstallerArt (Join-Path $Root 'assets\app-icon\hicolor\256x256\apps\com.amadersomaj.pixorastudio.png') $Banner $Dialog
 
-$Msi = Join-Path $Dist "photocraft-$Version-windows-$Arch.msi"
+$Msi = Join-Path $Dist "pixora-studio-$Version-windows-$Arch.msi"
 & (Join-Path $PSScriptRoot 'check-icons.ps1')
 Invoke-Native 'wix build' {
   wix build (Join-Path $PSScriptRoot 'photocraft.wxs') -arch $Arch `
     -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
     -culture en-US -loc (Join-Path $PSScriptRoot 'photocraft.en-us.wxl') `
-    -d "Version=$MsiVersion" -d "DisplayVersion=$Version" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\photocraft.ico')" `
+    -d "Version=$MsiVersion" -d "DisplayVersion=$Version" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\pixora.ico')" `
     -d "BannerBmp=$Banner" -d "DialogBmp=$Dialog" `
     -o $Msi
 }
@@ -146,12 +146,28 @@ Invoke-Native 'MSI shortcut icon validation (ICE50)' {
 Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($Msi, '.wixpdb'))
 & (Join-Path $PSScriptRoot 'sign.ps1') $Msi
 
+# ---- EXE Installer Bundle (WiX Burn) -----------------------------------------------------------
+$InstallerExe = Join-Path $Dist "pixora-studio-$Version-windows-$Arch-installer.exe"
+if (Test-Path (Join-Path $PSScriptRoot 'bundle.wxs')) {
+  Invoke-Native 'wix build installer exe bundle' {
+    wix build (Join-Path $PSScriptRoot 'bundle.wxs') -arch $Arch `
+      -ext WixToolset.BootstrapperApplications.wixext `
+      -d "Version=$MsiVersion" `
+      -d "IconPath=$(Join-Path $Root 'assets\app-icon\pixora.ico')" `
+      -d "LogoFile=$(Join-Path $Root 'assets\app-icon\hicolor\64x64\apps\com.amadersomaj.pixorastudio.png')" `
+      -d "MsiPath=$Msi" `
+      -o $InstallerExe
+  }
+  Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($InstallerExe, '.wixpdb'))
+  & (Join-Path $PSScriptRoot 'sign.ps1') $InstallerExe
+}
+
 # ---- portable zip ------------------------------------------------------------------------------
-$Portable = Join-Path $TargetDir "windows-package\photocraft-$Version-windows-$Arch-portable"
+$Portable = Join-Path $TargetDir "windows-package\pixora-studio-$Version-windows-$Arch-portable"
 Remove-Item -Recurse -Force $Portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Portable | Out-Null
 Copy-Item (Join-Path $Stage '*.exe') $Portable
-foreach ($f in 'README.md', 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE') {
+foreach ($f in 'README.md', 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE', 'LICENSES.md', 'ATTRIBUTION.md', 'NOTICE', 'BRANDING.md') {
   $p = Join-Path $Root $f
   if (Test-Path $p) { Copy-Item $p $Portable }
 }
@@ -164,9 +180,9 @@ if ($env:CRAFT_FONTS_DIR) {
   }
 }
 # portable.txt beside photocraft.exe switches on portable mode: settings, presets and recovery
-# files go to PhotoCraftData\ next to the exe instead of %APPDATA% (#228; see app_dirs.rs).
+# files go to PixoraStudioData\ next to the exe instead of %APPDATA% (#228; see app_dirs.rs).
 Copy-Item (Join-Path $PSScriptRoot 'portable.txt') $Portable
-$Zip = Join-Path $Dist "photocraft-$Version-windows-$Arch-portable.zip"
+$Zip = Join-Path $Dist "pixora-studio-$Version-windows-$Arch-portable.zip"
 Remove-Item -Force $Zip -ErrorAction SilentlyContinue
 Compress-Archive -Path $Portable -DestinationPath $Zip
 
@@ -178,4 +194,4 @@ if ($Arch -ne 'arm64' -or $HostArch -eq 'arm64') {
 } else {
   Write-Output "skipping photocraft-cli --version: an $Arch build doesn't run on this $HostArch machine"
 }
-Get-Item $Msi, $Zip | Format-Table Name, Length
+Get-Item $Msi, $InstallerExe, $Zip | Format-Table Name, Length

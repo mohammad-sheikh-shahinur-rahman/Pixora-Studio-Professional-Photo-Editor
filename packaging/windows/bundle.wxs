@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+  <Bundle Name="Pixora Studio"
+          Manufacturer="IT Amadersomaj Inc."
+          Version="$(var.Version)"
+          UpgradeCode="E7151F45-3C2A-4BBE-892D-96EF4512948A"
+          IconSourceFile="$(var.IconPath)">
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication
+          Theme="hyperlinkLicense"
+          LogoFile="$(var.LogoFile)"
+          LicenseUrl="https://pixora.amadersomaj.com" />
+    </BootstrapperApplication>
+
+    <Chain>
+      <MsiPackage SourceFile="$(var.MsiPath)" Vital="yes" />
+    </Chain>
+  </Bundle>
+</Wix>

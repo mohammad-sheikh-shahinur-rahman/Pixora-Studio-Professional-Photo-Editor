@@ -3,7 +3,7 @@
 use photocraft_engine::updates_cmds::{CheckFn, CheckResult, parse_release};
 use std::time::Duration;
 
-const LATEST: &str = "https://api.github.com/repos/storytold/photocraft/releases/latest";
+const LATEST: &str = "https://api.github.com/repos/amadersomaj/pixora-studio/releases/latest";
 const MAX_RESPONSE: u64 = 1024 * 1024;
 
 pub fn service() -> CheckFn {
@@ -34,7 +34,7 @@ fn fetch(url: &str, timeout: Duration) -> CheckResult {
         .new_agent();
     let mut response = match agent
         .get(url)
-        .header("User-Agent", "PhotoCraft-update-check")
+        .header("User-Agent", "PixoraStudio-update-check")
         .header("Accept", "application/vnd.github+json")
         .header("X-GitHub-Api-Version", "2026-03-10")
         .call()
@@ -86,7 +86,7 @@ mod tests {
         let result = fetch(&url, Duration::from_secs(5)).unwrap().unwrap();
         assert_eq!(result.version, "99.0.0");
         let request = worker.join().unwrap().to_ascii_lowercase();
-        assert!(request.contains("user-agent: photocraft-update-check\r\n"));
+        assert!(request.contains("user-agent: pixorastudio-update-check\r\n"));
         assert!(request.contains("accept: application/vnd.github+json"));
         assert!(!request.contains("authorization:") && !request.contains("cookie:"));
     }

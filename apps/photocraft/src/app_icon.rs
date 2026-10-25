@@ -53,15 +53,15 @@ fn in_app_bundle(exe: &std::path::Path) -> bool {
 }
 
 #[cfg(target_os = "macos")]
-const PNG: &[u8] = include_bytes!("../../../assets/app-icon/photocraft-1024.png");
+const PNG: &[u8] = include_bytes!("../../../assets/app-icon/pixora-1024.png");
 #[cfg(not(target_os = "macos"))]
-const PNG: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png");
+const PNG: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/com.amadersomaj.pixorastudio.png");
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const ICO: &[u8] = include_bytes!("../../../assets/app-icon/photocraft.ico");
+    const ICO: &[u8] = include_bytes!("../../../assets/app-icon/pixora.ico");
     const WXS: &str = include_str!("../../../packaging/windows/photocraft.wxs");
 
     fn u16_at(b: &[u8], i: usize) -> usize {
@@ -132,7 +132,7 @@ mod tests {
             sizes.push(w);
         }
         for want in [16, 24, 32, 48, 64, 256] {
-            assert!(sizes.contains(&want), "photocraft.ico lacks {want}px (has {sizes:?})");
+            assert!(sizes.contains(&want), "pixora.ico lacks {want}px (has {sizes:?})");
         }
     }
 

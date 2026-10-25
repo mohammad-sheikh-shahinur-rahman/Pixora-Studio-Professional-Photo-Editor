@@ -21,8 +21,8 @@ pub fn visual(text: &str) -> Cow<'_, str> {
 }
 
 /// [`visual`] for a line that reads left to right as a whole even when it starts with a
-/// right-to-left name, such as the title bar's "*صورة.psd — PhotoCraft": with the paragraph
-/// direction taken from the name, the "— PhotoCraft" tail moved to the left.
+/// right-to-left name, such as the title bar's "*صورة.psd — Pixora Studio": with the paragraph
+/// direction taken from the name, the "— Pixora Studio" tail moved to the left.
 pub fn visual_ltr(text: &str) -> Cow<'_, str> {
     visual_at(text, Some(Level::ltr()))
 }
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn left_to_right_text_is_untouched_and_not_copied() {
-        for text in ["PhotoCraft", "Layer 1", "", "Background copy (2)", "日本語のレイヤー"] {
+        for text in ["Pixora Studio", "Layer 1", "", "Background copy (2)", "日本語のレイヤー"] {
             assert!(matches!(visual(text), Cow::Borrowed(t) if t == text), "{text}");
         }
     }
@@ -169,16 +169,16 @@ mod tests {
         // A left-to-right name with an Arabic word at the end is left as it is.
         assert_eq!(visual("Layer 1 نص"), "Layer 1 نص");
         // Latin inside an Arabic name stays readable.
-        assert_eq!(visual("نص PhotoCraft هنا"), "هنا PhotoCraft نص");
+        assert_eq!(visual("نص Pixora Studio هنا"), "هنا Pixora Studio نص");
     }
 
     /// #5385 review: the title bar's line is left to right as a whole, so a right-to-left
-    /// document name keeps "— PhotoCraft" after it, at the right.
+    /// document name keeps "— Pixora Studio" after it, at the right.
     #[test]
     fn the_title_line_stays_left_to_right_around_a_right_to_left_name() {
-        assert_eq!(visual_ltr("*صورة.psd — PhotoCraft"), "*صورة.psd — PhotoCraft");
-        assert_eq!(visual_ltr("لاشي مكتوب.png — PhotoCraft"), "مكتوب لاشي.png — PhotoCraft");
-        assert!(matches!(visual_ltr("Untitled-1 — PhotoCraft"), Cow::Borrowed(_)));
+        assert_eq!(visual_ltr("*صورة.psd — Pixora Studio"), "*صورة.psd — Pixora Studio");
+        assert_eq!(visual_ltr("لاشي مكتوب.png — Pixora Studio"), "مكتوب لاشي.png — Pixora Studio");
+        assert!(matches!(visual_ltr("Untitled-1 — Pixora Studio"), Cow::Borrowed(_)));
     }
 
     /// #5385 review: a right-to-left name that doesn't fit keeps its first words and ends with

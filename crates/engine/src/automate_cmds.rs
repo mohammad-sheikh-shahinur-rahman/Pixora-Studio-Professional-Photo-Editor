@@ -35,7 +35,7 @@ fn extendscript_ext(path: &str) -> Option<&str> {
 
 fn reject_extendscript(cmd: &str, path: &str) -> Result<()> {
     match extendscript_ext(path) {
-        Some(_) => Err(bad(cmd, "PhotoCraft scripts are JSON or command lists (one command.id {json} per line), not Photoshop ExtendScript (.js/.jsx)")),
+        Some(_) => Err(bad(cmd, "Pixora Studio scripts are JSON or command lists (one command.id {json} per line), not Photoshop ExtendScript (.js/.jsx)")),
         None => Ok(()),
     }
 }
@@ -375,7 +375,7 @@ fn write_shim(droplet: &str) -> Result<String> {
     // quoted segment, emit a literal quote, then resume it.
     let quoted_abs = format!("'{}'", abs.replace('\'', "'\\''"));
     let body = format!(
-        "#!/bin/sh\n# PhotoCraft droplet: runs the action on the files given (or dropped).\nexec \"${{PHOTOCRAFT_CLI:-photocraft-cli}}\" droplet {quoted_abs} \"$@\"\n"
+        "#!/bin/sh\n# Pixora Studio droplet: runs the action on the files given (or dropped).\nexec \"${{PHOTOCRAFT_CLI:-photocraft-cli}}\" droplet {quoted_abs} \"$@\"\n"
     );
     crate::file_cmds::write_file(&shim, body.as_bytes())?;
     #[cfg(unix)]
@@ -398,7 +398,7 @@ fn run_droplet(s: &mut Session, p: &Value) -> Result<Value> {
     let path = p.get("droplet").or_else(|| p.get("path")).and_then(Value::as_str).ok_or_else(|| bad(cmd, "missing \"droplet\""))?;
     let v: Value = serde_json::from_slice(&read_file(path)?).map_err(|e| bad(cmd, format!("{path}: {e}")))?;
     if v.get("photocraftDroplet").is_none() {
-        return Err(bad(cmd, format!("{path} is not a PhotoCraft droplet")));
+        return Err(bad(cmd, format!("{path} is not a Pixora Studio droplet")));
     }
     let steps = v.get("action").and_then(|a| a.get("steps")).cloned().ok_or_else(|| bad(cmd, "droplet has no action"))?;
     let opts = v.get("options").cloned().unwrap_or(json!({}));

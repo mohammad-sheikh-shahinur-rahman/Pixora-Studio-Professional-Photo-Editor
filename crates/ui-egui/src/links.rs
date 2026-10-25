@@ -6,15 +6,14 @@ use serde_json::{Value, json};
 
 use crate::PhotocraftApp;
 
-pub const DISCORD: &str = "https://discord.gg/artcraft";
-pub const ARTCRAFT_WEBSITE: &str = "https://getartcraft.com";
-pub const APP_PAGE: &str = "https://getartcraft.com/apps/photocraft";
-pub const GITHUB: &str = "https://github.com/storytold/photocraft";
-pub const ISSUES: &str = "https://github.com/storytold/photocraft/issues";
+pub const DISCORD: &str = "https://discord.gg/pixorastudio";
+pub const APP_PAGE: &str = "https://pixora.amadersomaj.com";
+pub const GITHUB: &str = "https://github.com/amadersomaj/pixora-studio";
+pub const ISSUES: &str = "https://github.com/amadersomaj/pixora-studio/issues";
 
 /// Help-menu link commands: (id, url). Labels live in `menus::UI_COMMANDS`.
 pub const COMMANDS: &[(&str, &str)] =
-    &[("help.discord", DISCORD), ("help.website", APP_PAGE), ("help.artcraftWebsite", ARTCRAFT_WEBSITE), ("help.github", GITHUB), ("help.reportIssue", ISSUES)];
+    &[("help.discord", DISCORD), ("help.website", APP_PAGE), ("help.github", GITHUB), ("help.reportIssue", ISSUES)];
 
 pub fn url_for(id: &str) -> Option<&'static str> {
     COMMANDS.iter().find(|c| c.0 == id).map(|c| c.1)
@@ -45,7 +44,7 @@ pub fn discord_button(app: &mut PhotocraftApp, ui: &mut egui::Ui, min_width: f32
 /// platform browser service) rather than `ui.hyperlink_to`, which uses the unreliable `ctx.open_url`.
 pub fn link_row(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let t = crate::theme::Tokens::get(ui.ctx());
-    let links = [(tl!("PhotoCraft website"), APP_PAGE), (tl!("GitHub"), GITHUB), (tl!("ArtCraft"), ARTCRAFT_WEBSITE)];
+    let links = [(tl!("Pixora Studio website"), APP_PAGE), (tl!("GitHub"), GITHUB)];
     let font = egui::FontId::proportional(12.5);
     let sep = "  ·  ";
     let width: f32 = links.iter().map(|(l, _)| ui.painter().layout_no_wrap((*l).into(), font.clone(), t.text).size().x).sum::<f32>()

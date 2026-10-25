@@ -81,7 +81,7 @@ use photocraft_engine::Session;
 use photocraft_ui_egui::PhotocraftApp;
 
 /// Matches the `.desktop` file and hicolor icon name, so Wayland docks pick up the icon.
-const APP_ID: &str = "ai.storyteller.photocraft";
+const APP_ID: &str = "com.amadersomaj.pixorastudio";
 
 /// Windows and Linux: no OS title bar; the app's top bar is the title bar, with its own caption
 /// buttons and edge resizing (`photocraft_ui_egui::titlebar`), as Photoshop does on Windows. macOS
@@ -107,7 +107,7 @@ fn native_options(custom_titlebar: bool) -> eframe::NativeOptions {
     eframe::NativeOptions {
         viewport: viewport
             .with_app_id(APP_ID)
-            .with_title("PhotoCraft")
+            .with_title("Pixora Studio")
             .with_inner_size([1440.0, 900.0])
             .with_min_inner_size([760.0, 480.0])
             .with_drag_and_drop(true)

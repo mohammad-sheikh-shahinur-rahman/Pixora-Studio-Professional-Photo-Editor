@@ -20,13 +20,13 @@ fn main() {
         println!("cargo:rustc-link-arg-bins=delayimp.lib");
     }
     let mut res = winresource::WindowsResource::new();
-    res.set_icon("../../assets/app-icon/photocraft.ico")
-        .set("ProductName", "PhotoCraft")
-        .set("FileDescription", "PhotoCraft image editor")
-        .set("CompanyName", "Learning Machines LLC")
-        .set("LegalCopyright", "Copyright (c) the PhotoCraft authors. MIT OR Apache-2.0.")
+    res.set_icon("../../assets/app-icon/pixora.ico")
+        .set("ProductName", "Pixora Studio")
+        .set("FileDescription", "Pixora Studio — Professional Photo Editor")
+        .set("CompanyName", "IT Amadersomaj Inc.")
+        .set("LegalCopyright", "Copyright (c) 2026 IT Amadersomaj Inc. and contributors. Portions copyright (c) original authors. MIT OR Apache-2.0.")
         .set("OriginalFilename", "photocraft.exe")
-        .set("InternalName", "photocraft");
+        .set("InternalName", "pixora-studio");
     if let Err(e) = res.compile() {
         if std::env::var_os("PHOTOCRAFT_REQUIRE_WINRES").is_some() {
             panic!("embedding Windows resources failed: {e}");

@@ -24,13 +24,13 @@ fn main() -> std::io::Result<()> {
     // FileVersion / ProductVersion strings and the numeric FILEVERSION / PRODUCTVERSION are left
     // to `WindowsResource::new`, which reads the Cargo package version. A pre-release such as
     // `1.2.3-rc.1` stays in the strings; the numeric fields are `1.2.3.0`.
-    res.set_icon("../../assets/app-icon/photocraft.ico")
-        .set("ProductName", "PhotoCraft")
-        .set("FileDescription", "PhotoCraft command-line interface")
-        .set("CompanyName", "Learning Machines LLC")
-        .set("LegalCopyright", "Copyright (c) the PhotoCraft authors. MIT OR Apache-2.0.")
+    res.set_icon("../../assets/app-icon/pixora.ico")
+        .set("ProductName", "Pixora Studio")
+        .set("FileDescription", "Pixora Studio command-line interface")
+        .set("CompanyName", "IT Amadersomaj Inc.")
+        .set("LegalCopyright", "Copyright (c) 2026 IT Amadersomaj Inc. and contributors. Portions copyright (c) original authors. MIT OR Apache-2.0.")
         .set("OriginalFilename", "photocraft-cli.exe")
-        .set("InternalName", "photocraft-cli");
+        .set("InternalName", "pixora-cli");
     if let Err(err) = res.compile() {
         if std::env::var_os("PHOTOCRAFT_REQUIRE_WINRES").is_some() {
             return Err(std::io::Error::other(format!(
