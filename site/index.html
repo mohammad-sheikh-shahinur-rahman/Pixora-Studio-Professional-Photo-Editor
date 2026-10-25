@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pixora Studio — Professional Photo Editor</title>
-<meta name="description" content="Pixora Studio: a free, offline, open-source professional photo editor written entirely in Rust. Layers, masks, adjustment layers, typography, vectors, brushes, and true PSD fidelity — GPU-accelerated, no webviews, no subscriptions.">
+<title>Pixora Studio — Professional Photo & Graphics Editor</title>
+<meta name="description" content="Pixora Studio: a free, offline, open-source professional photo editor written entirely in Rust. Layers, masks, adjustment layers, typography, vectors, brushes, and true PSD fidelity — GPU-accelerated across Windows, macOS, and Linux.">
 <meta property="og:title" content="Pixora Studio — Professional Photo Editor">
-<meta property="og:description" content="Professional Photo Editing. Free for Everyone. Pure Rust, true PSD fidelity, 100% offline.">
+<meta property="og:description" content="Professional Photo Editing. Free for Everyone. Pure Rust, true PSD fidelity, Windows, macOS, and Linux.">
 <meta property="og:image" content="assets/demo.jpg">
 <link rel="icon" type="image/png" href="assets/logo.png">
 <style>
@@ -14,94 +14,138 @@
     --bg: #07090d;
     --surface: #0d1117;
     --card: #12161e;
+    --card-hover: #181e29;
     --border: #232a35;
+    --border-accent: rgba(47, 123, 245, 0.4);
     --text: #e8ecf2;
     --muted: #98a2b3;
     --brand: #2f7bf5;
     --brand-soft: #6fa4ff;
+    --green: #10b981;
+    --purple: #8b5cf6;
+    --orange: #f59e0b;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
     background: var(--bg);
     color: var(--text);
-    font: 16px/1.65 "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font: 16px/1.65 "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   }
   a { color: var(--brand-soft); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
   header.site {
-    position: sticky; top: 0; z-index: 10;
+    position: sticky; top: 0; z-index: 100;
     background: rgba(7, 9, 13, .85);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
   }
   header.site .wrap { display: flex; align-items: center; gap: 14px; height: 64px; }
-  header.site img { height: 32px; width: 32px; border-radius: 8px; }
-  header.site .name { font-weight: 700; font-size: 17px; letter-spacing: .2px; }
-  header.site nav { margin-left: auto; display: flex; gap: 22px; flex-wrap: wrap; }
-  header.site nav a { color: var(--muted); font-size: 15px; }
+  header.site img { height: 36px; width: 36px; border-radius: 8px; }
+  header.site .name { font-weight: 700; font-size: 18px; letter-spacing: .2px; }
+  header.site nav { margin-left: auto; display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+  header.site nav a { color: var(--muted); font-size: 14.5px; transition: color .15s; }
   header.site nav a:hover { color: var(--text); text-decoration: none; }
+  header.site nav .btn-header {
+    background: var(--brand); color: #fff; padding: 7px 16px; border-radius: 8px; font-weight: 600; font-size: 14px;
+  }
+  header.site nav .btn-header:hover { background: #2563eb; color: #fff; }
 
   .hero {
     text-align: center;
     padding: 88px 0 64px;
     background:
       radial-gradient(ellipse 70% 55% at 50% -10%, rgba(47, 123, 245, .28), transparent),
-      linear-gradient(180deg, rgba(47, 123, 245, .09), transparent 60%);
+      linear-gradient(180deg, rgba(47, 123, 245, .08), transparent 60%);
   }
-  .hero img.logo { height: 108px; width: 108px; border-radius: 24px; margin-bottom: 28px; }
-  .hero h1 { font-size: clamp(38px, 6vw, 56px); font-weight: 800; letter-spacing: -.5px; }
-  .hero p.tag { color: var(--brand-soft); font-size: clamp(18px, 3vw, 24px); font-weight: 600; margin: 10px 0 18px; }
-  .hero p.sub { max-width: 620px; margin: 0 auto 34px; color: var(--muted); font-size: 17px; }
-  .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .hero img.logo { height: 112px; width: 112px; border-radius: 26px; margin-bottom: 24px; box-shadow: 0 12px 36px rgba(47, 123, 245, .3); }
+  .hero h1 { font-size: clamp(38px, 6vw, 58px); font-weight: 800; letter-spacing: -.6px; line-height: 1.15; }
+  .hero p.tag { color: var(--brand-soft); font-size: clamp(18px, 3vw, 24px); font-weight: 600; margin: 12px 0 18px; }
+  .hero p.sub { max-width: 680px; margin: 0 auto 34px; color: var(--muted); font-size: 17px; }
+  .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; align-items: center; }
   .btn {
-    display: inline-block; padding: 13px 28px; border-radius: 12px; font-weight: 700; font-size: 16px;
-    border: 1px solid transparent; transition: transform .12s ease, filter .12s ease;
+    display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; border-radius: 12px; font-weight: 700; font-size: 15.5px;
+    border: 1px solid transparent; transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
   }
-  .btn:hover { transform: translateY(-1px); filter: brightness(1.1); text-decoration: none; }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.1); text-decoration: none; }
   .btn.primary { background: var(--brand); color: #fff; box-shadow: 0 8px 24px rgba(47, 123, 245, .35); }
   .btn.ghost { border-color: var(--border); color: var(--text); background: var(--card); }
-  .chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
-  .chip { background: rgba(47, 123, 245, .12); border: 1px solid rgba(47, 123, 245, .35); color: var(--brand-soft);
-          padding: 6px 16px; border-radius: 999px; font-size: 13.5px; font-weight: 600; }
-
-  section { padding: 64px 0; }
-  section h2 { font-size: clamp(26px, 4vw, 34px); font-weight: 800; margin-bottom: 8px; }
-  section .lead { color: var(--muted); margin-bottom: 36px; max-width: 680px; }
-
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
-  .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 22px;
+  .btn.ghost:hover { border-color: var(--brand); }
+  .chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+  .chip {
+    background: rgba(47, 123, 245, .1); border: 1px solid rgba(47, 123, 245, .3); color: var(--brand-soft);
+    padding: 6px 16px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
   }
-  .card h3 { font-size: 17px; margin-bottom: 8px; }
+  .chip.success { background: rgba(16, 185, 129, .1); border-color: rgba(16, 185, 129, .3); color: var(--green); }
+  .chip.purple { background: rgba(139, 92, 246, .1); border-color: rgba(139, 92, 246, .3); color: var(--purple); }
+
+  section { padding: 68px 0; }
+  section.alt { background: rgba(13, 17, 23, .5); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  section h2 { font-size: clamp(26px, 4vw, 36px); font-weight: 800; margin-bottom: 10px; }
+  section .lead { color: var(--muted); margin-bottom: 38px; max-width: 720px; font-size: 16.5px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 26px 22px;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--border-accent); background: var(--card-hover); }
+  .card h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
   .card p { color: var(--muted); font-size: 14.5px; }
-  .card .ico { font-size: 26px; display: block; margin-bottom: 10px; }
+  .card .ico { font-size: 28px; display: block; margin-bottom: 12px; }
 
-  .shot { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+  /* Feature Badge */
+  .badge { display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; text-transform: uppercase; margin-left: 6px; vertical-align: middle; }
+  .badge.new { background: #2563eb; color: #fff; }
+
+  .shot { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
   .shot img { display: block; width: 100%; height: auto; }
-  .shot figcaption { padding: 14px 18px; background: var(--surface); color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); }
+  .shot figcaption { padding: 14px 20px; background: var(--surface); color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); }
 
-  table.plans { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-  table.plans th, table.plans td { text-align: left; padding: 14px 18px; font-size: 15px; }
-  table.plans th { background: var(--surface); color: var(--muted); font-weight: 600; }
-  table.plans tr + tr td { border-top: 1px solid var(--border); }
-  table.plans td.mono { font-family: Consolas, ui-monospace, monospace; font-size: 13.5px; color: var(--brand-soft); }
+  /* OS Cards Grid */
+  .os-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 24px; }
+  .os-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px; display: flex; flex-direction: column;
+    box-shadow: 0 8px 30px rgba(0,0,0,.25);
+  }
+  .os-card.featured { border-color: var(--brand); position: relative; }
+  .os-card .os-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .os-card .os-icon { font-size: 36px; }
+  .os-card h3 { font-size: 20px; font-weight: 700; }
+  .os-card .os-meta { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+  .os-downloads { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+  .dl-row {
+    display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; font-size: 14px; transition: border-color .15s;
+  }
+  .dl-row:hover { border-color: var(--brand-soft); text-decoration: none; }
+  .dl-row b { color: var(--text); }
+  .dl-row .ext { font-family: Consolas, monospace; font-size: 12.5px; color: var(--brand-soft); background: rgba(47, 123, 245, .15); padding: 2px 8px; border-radius: 6px; }
 
-  .docs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
-  .doc-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: block; }
+  /* Scripts Section */
+  .scripts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .script-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+    transition: transform .12s ease;
+  }
+  .script-card:hover { transform: translateY(-2px); border-color: var(--border-accent); }
+  .script-card b { display: flex; align-items: center; gap: 8px; font-size: 16px; margin-bottom: 6px; color: var(--text); }
+  .script-card p { font-size: 13.5px; color: var(--muted); }
+
+  .docs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .doc-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; display: block; transition: border-color .15s; }
   .doc-card:hover { border-color: var(--brand); text-decoration: none; }
-  .doc-card b { color: var(--text); display: block; margin-bottom: 4px; }
+  .doc-card b { color: var(--text); display: block; margin-bottom: 6px; font-size: 16.5px; }
   .doc-card span { color: var(--muted); font-size: 14px; }
-  .docs-grid a:hover { text-decoration: none; }
 
-  footer.site { border-top: 1px solid var(--border); padding: 40px 0 56px; color: var(--muted); font-size: 14px; }
-  footer.site .cols { display: flex; gap: 40px; flex-wrap: wrap; }
-  footer.site b { color: var(--text); display: block; margin-bottom: 8px; font-size: 15px; }
+  footer.site { border-top: 1px solid var(--border); padding: 48px 0 64px; color: var(--muted); font-size: 14px; }
+  footer.site .cols { display: flex; gap: 48px; flex-wrap: wrap; margin-bottom: 32px; }
+  footer.site b { color: var(--text); display: block; margin-bottom: 12px; font-size: 15px; }
   footer.site ul { list-style: none; }
-  footer.site li { margin-bottom: 6px; }
-  footer.site .legal { margin-top: 28px; color: #5d6675; font-size: 13px; }
+  footer.site li { margin-bottom: 8px; }
+  footer.site .legal { border-top: 1px solid var(--border); padding-top: 24px; color: #5d6675; font-size: 13px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -112,30 +156,38 @@
     <span class="name">Pixora Studio</span>
     <nav>
       <a href="#features">Features</a>
-      <a href="#download">Download</a>
-      <a href="docs/">Documentation</a>
+      <a href="#scripts">Scripts</a>
+      <a href="#download">Downloads</a>
+      <a href="docs/">Docs</a>
       <a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor">GitHub</a>
+      <a class="btn-header" href="#download">Get Free</a>
     </nav>
   </div>
 </header>
 
 <div class="hero">
   <div class="wrap">
-    <img class="logo" src="assets/logo.png" alt="">
+    <img class="logo" src="assets/logo.png" alt="Pixora Studio Icon">
     <h1>Pixora Studio</h1>
-    <p class="tag">Professional Photo Editing. Free for Everyone.</p>
+    <p class="tag">Professional Photo &amp; Graphics Editing. Free for Everyone.</p>
     <p class="sub">Layers, masks, adjustment layers, layer styles, typography, vectors, brushes, and
-       true PSD support — in a native desktop application written entirely in Rust.
-       Free, open source, offline, and yours.</p>
+       true PSD/PSB fidelity — in a native desktop application written entirely in Rust.
+       Cross-platform across Windows, macOS, and Linux. 100% offline, free, and yours.</p>
     <div class="cta">
-      <a class="btn primary" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">Download for Windows</a>
-      <a class="btn ghost" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor">View source on GitHub</a>
+      <a class="btn primary" href="#download">
+        <span>⬇️ Download Pixora Studio</span>
+      </a>
+      <a class="btn ghost" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor">
+        <span>⭐ View on GitHub</span>
+      </a>
     </div>
     <div class="chips">
-      <span class="chip">100% Rust</span>
-      <span class="chip">GPU-accelerated (wgpu)</span>
-      <span class="chip">True PSD fidelity</span>
-      <span class="chip">No telemetry · offline</span>
+      <span class="chip">100% Pure Rust</span>
+      <span class="chip success">100% Photoshop Parity (657/657)</span>
+      <span class="chip purple">Windows · macOS · Linux</span>
+      <span class="chip">GPU Accelerated (wgpu)</span>
+      <span class="chip">True PSD/PSB Fidelity</span>
+      <span class="chip">Zero Telemetry · Offline</span>
     </div>
   </div>
 </div>
@@ -144,20 +196,61 @@
   <div class="wrap">
     <h2>Built for professionals</h2>
     <p class="lead">Menus, shortcuts, and panels are right where professional editors expect them —
-       without subscriptions, accounts, or the cloud.</p>
+       without subscriptions, cloud lock-in, or telemetry.</p>
     <div class="grid">
       <div class="card"><span class="ico">🎛️</span><h3>Familiar by Design</h3>
-        <p>From Ctrl+J to Ctrl+T, your Photoshop muscle memory works out of the box: same menus, tools, and dockable panels.</p></div>
+        <p>From Ctrl+J to Ctrl+T, your Photoshop muscle memory works out of the box: identical menus, keyboard shortcuts, tools, and dockable panels.</p></div>
       <div class="card"><span class="ico">⚡</span><h3>Native &amp; Lightning Fast</h3>
-        <p>Pure Rust with a GPU compositor on wgpu (DirectX 12 and Vulkan), tile-based multithreading, and copy-on-write memory. Zero Electron, zero webviews.</p></div>
-      <div class="card"><span class="ico">🗂️</span><h3>True PSD Fidelity</h3>
-        <p>Open, edit, and save layered Photoshop documents (PSD/PSB) with high-fidelity preservation of layers, blend modes, masks, and smart objects.</p></div>
+        <p>Pure Rust with a GPU compositor on wgpu (DirectX 12, Vulkan, Metal), tile-based multithreading, and copy-on-write memory. Zero Electron, zero webviews.</p></div>
+      <div class="card"><span class="ico">🗂️</span><h3>True PSD/PSB Fidelity</h3>
+        <p>Open, edit, and save layered Photoshop documents with high-fidelity preservation of layer groups, blend modes, masks, and smart objects.</p></div>
       <div class="card"><span class="ico">🔒</span><h3>100% Offline &amp; Free</h3>
-        <p>No subscriptions, no accounts, no cloud dependencies, zero telemetry. Pixora Studio runs completely on your machine and belongs to you.</p></div>
-      <div class="card"><span class="ico">🖼️</span><h3>Color-managed precision</h3>
-        <p>Full ICC workflows on 8-bit, 16-bit integer and 32-bit float pipelines — RGB, Grayscale, CMYK and Lab.</p></div>
-      <div class="card"><span class="ico">🤖</span><h3>Automation-first</h3>
-        <p>Headless CLI, Photoshop-compatible Actions, and every feature exposed as an engine command — scriptable and agent-drivable.</p></div>
+        <p>No subscriptions, no accounts, no cloud dependencies, zero telemetry. Pixora Studio runs completely on your local machine and respects your privacy.</p></div>
+      <div class="card"><span class="ico">🖼️</span><h3>Color-Managed Precision</h3>
+        <p>Full ICC workflows on 8-bit, 16-bit integer and 32-bit float pipelines — RGB, Grayscale, CMYK and Lab color spaces with Little CMS 2 integration.</p></div>
+      <div class="card"><span class="ico">🤖</span><h3>Automation &amp; MCP Agent Ready</h3>
+        <p>Photoshop Actions (.ATN), Model Context Protocol (MCP) server, and rich headless CLI for batch processing, automated rendering, and AI agent integration.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="scripts">
+  <div class="wrap">
+    <h2>Built-in Power Scripts <span class="badge new">New</span></h2>
+    <p class="lead">Accelerate your workflow with comprehensive production utilities built directly into <code>File &gt; Scripts</code>.</p>
+    <div class="scripts-grid">
+      <div class="script-card">
+        <b>📑 Layer Comps to PDF</b>
+        <p>Flattens each comp over crisp backgrounds and compiles a multi-page presentation PDF instantly.</p>
+      </div>
+      <div class="script-card">
+        <b>🏷️ Batch Rename Layers</b>
+        <p>Bulk search &amp; replace layer names, add prefixes/suffixes, and apply <code>{n}</code> sequential zero-padded numbers.</p>
+      </div>
+      <div class="script-card">
+        <b>📱 Export Social Presets</b>
+        <p>Auto-scales and exports your canvas to Instagram Square, Story, Facebook Post, YouTube Thumbnail, and Twitter in 1-click.</p>
+      </div>
+      <div class="script-card">
+        <b>🧩 Split Image to Grid</b>
+        <p>Divides your canvas into custom rows &amp; columns with auto-numbering — ideal for Instagram carousels and game tilesets.</p>
+      </div>
+      <div class="script-card">
+        <b>📐 Export Layout JSON</b>
+        <p>Generates structured JSON with precise layer coordinates (X, Y), dimensions (W, H), opacity, and blend modes for frontend developers.</p>
+      </div>
+      <div class="script-card">
+        <b>🔁 Make Seamless Texture</b>
+        <p>Applies a 50% coordinate wrap with smart edge cross-blending for repeating 3D game materials and background patterns.</p>
+      </div>
+      <div class="script-card">
+        <b>🎨 Color Code Layers by Kind</b>
+        <p>Auto-organizes layer panels with intuitive color tags: Text (Yellow), Shapes (Orange), Adjustments (Seafoam), Smart Objects (Violet).</p>
+      </div>
+      <div class="script-card">
+        <b>🧹 Clean Document Tools</b>
+        <p>Delete All Hidden Layers, Fit Image (proportional bounds scaling), and Trim Document (transparent edge crop).</p>
+      </div>
     </div>
   </div>
 </section>
@@ -174,37 +267,99 @@
 
 <section id="download">
   <div class="wrap">
-    <h2>Download</h2>
-    <p class="lead">Windows 10/11 x64. Binaries link the C runtime statically — no extra runtime installs.</p>
-    <table class="plans">
-      <tr><th>Package</th><th>Description</th><th>File</th></tr>
-      <tr>
-        <td><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest"><b>Setup installer</b> (.exe)</a></td>
-        <td>Single-click executable setup installer</td>
-        <td class="mono">pixora-studio-&lt;version&gt;-windows-x64-installer.exe</td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest"><b>MSI installer</b> (.msi)</a></td>
-        <td>Per-machine installer with Start Menu shortcuts and file associations</td>
-        <td class="mono">pixora-studio-&lt;version&gt;-windows-x64.msi</td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest"><b>Portable</b> (.zip)</a></td>
-        <td>Zero-install archive; keeps settings beside the executable (<em>PixoraStudioData\</em>)</td>
-        <td class="mono">pixora-studio-&lt;version&gt;-windows-x64-portable.zip</td>
-      </tr>
-    </table>
+    <h2>Download Pixora Studio</h2>
+    <p class="lead">Native executables for all major operating systems. Statically linked, standalone, and ready to run.</p>
+
+    <div class="os-grid">
+      <!-- Windows Card -->
+      <div class="os-card featured">
+        <div class="os-header">
+          <span class="os-icon">🪟</span>
+          <div>
+            <h3>Windows</h3>
+            <span style="font-size:13px; color:var(--brand-soft);">Windows 10 / 11 (x64)</span>
+          </div>
+        </div>
+        <p class="os-meta">DirectX 12 &amp; Vulkan native acceleration. Self-contained installer and portable zero-install builds.</p>
+        <div class="os-downloads">
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Setup Installer</b></span>
+            <span class="ext">.EXE</span>
+          </a>
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Enterprise MSI</b></span>
+            <span class="ext">.MSI</span>
+          </a>
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Standalone Portable</b></span>
+            <span class="ext">.ZIP</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- macOS Card -->
+      <div class="os-card">
+        <div class="os-header">
+          <span class="os-icon">🍏</span>
+          <div>
+            <h3>macOS</h3>
+            <span style="font-size:13px; color:var(--brand-soft);">Apple Silicon &amp; Intel</span>
+          </div>
+        </div>
+        <p class="os-meta">Metal &amp; AppKit GPU rendering. Universal binary for Apple Silicon (M1/M2/M3/M4) and Intel x86_64.</p>
+        <div class="os-downloads">
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Universal DMG Installer</b></span>
+            <span class="ext">.DMG</span>
+          </a>
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Headless CLI Suite</b></span>
+            <span class="ext">.ZIP</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Linux Card -->
+      <div class="os-card">
+        <div class="os-header">
+          <span class="os-icon">🐧</span>
+          <div>
+            <h3>Linux</h3>
+            <span style="font-size:13px; color:var(--brand-soft);">All Modern Distros (x86_64)</span>
+          </div>
+        </div>
+        <p class="os-meta">Wayland and X11 Vulkan compositing. Portable AppImage with delta updates, native DEB, and RPM packages.</p>
+        <div class="os-downloads">
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Universal AppImage</b></span>
+            <span class="ext">.AppImage</span>
+          </a>
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Debian / Ubuntu</b></span>
+            <span class="ext">.DEB</span>
+          </a>
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Fedora / openSUSE</b></span>
+            <span class="ext">.RPM</span>
+          </a>
+          <a class="dl-row" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">
+            <span><b>Standard Tarball</b></span>
+            <span class="ext">.TAR.GZ</span>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section id="docs">
+<section id="docs" class="alt">
   <div class="wrap">
-    <h2>Documentation</h2>
+    <h2>Documentation &amp; Community</h2>
     <div class="docs-grid">
-      <a class="doc-card" href="docs/"><b>📘 Full documentation</b><span>Architecture, formats, automation, development guide</span></a>
-      <a class="doc-card" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/blob/main/CHANGELOG.md"><b>📝 Changelog</b><span>What changed in every release</span></a>
-      <a class="doc-card" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/blob/main/SECURITY.md"><b>🛡️ Security</b><span>How to report vulnerabilities responsibly</span></a>
-      <a class="doc-card" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/issues"><b>🐞 Issues</b><span>Report bugs and request features</span></a>
+      <a class="doc-card" href="docs/"><b>📘 Full Documentation</b><span>Architecture, PSD specs, commands registry, development guide</span></a>
+      <a class="doc-card" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/blob/main/CHANGELOG.md"><b>📝 Changelog</b><span>Explore what changed in every release</span></a>
+      <a class="doc-card" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/blob/main/SECURITY.md"><b>🛡️ Security Policy</b><span>Responsible disclosure and sandbox boundaries</span></a>
+      <a class="doc-card" href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/issues"><b>🐞 Issue Tracker</b><span>Report bugs and suggest new features</span></a>
     </div>
   </div>
 </section>
@@ -215,27 +370,29 @@
       <div>
         <b>Pixora Studio</b>
         <ul>
-          <li><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">Releases</a></li>
+          <li><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/releases/latest">Latest Releases</a></li>
           <li><a href="docs/">Documentation</a></li>
           <li><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/blob/main/CONTRIBUTING.md">Contributing</a></li>
         </ul>
       </div>
       <div>
-        <b>Project</b>
+        <b>Project &amp; Source</b>
         <ul>
-          <li><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor">GitHub repository</a></li>
+          <li><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor">GitHub Repository</a></li>
           <li><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/blob/main/ROADMAP.md">Roadmap</a></li>
           <li><a href="https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/blob/main/ATTRIBUTION.md">Attribution</a></li>
         </ul>
       </div>
       <div>
         <b>Published by</b>
-        <ul><li>IT Amadersomaj Inc.</li><li>Free, open-source software</li></ul>
+        <ul>
+          <li>IT Amadersomaj Inc.</li>
+          <li>Dual-licensed under MIT and Apache-2.0</li>
+          <li>Free, open-source software for everyone</li>
+        </ul>
       </div>
     </div>
-    <p class="legal">Dual-licensed under MIT and Apache-2.0. Pixora Studio is an independent fork of PhotoCraft
-       (ArtCraft Team and open-source contributors; portions copyright © 2026). Not affiliated with or endorsed by
-       Adobe Systems Inc. or the original ArtCraft Team.</p>
+    <p class="legal">Pixora Studio is an independent open-source fork developed by IT Amadersomaj Inc. Dual-licensed under the MIT and Apache-2.0 licenses. Not affiliated with or endorsed by Adobe Systems Inc. Photoshop is a registered trademark of Adobe Systems Inc.</p>
   </div>
 </footer>
 
