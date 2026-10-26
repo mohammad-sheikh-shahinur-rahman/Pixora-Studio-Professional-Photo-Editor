@@ -373,19 +373,83 @@ fn can_caf(s: &Session) -> std::result::Result<(), String> {
     Ok(())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+fn try_ai_generate(prompt: &str, w: u32, h: u32) -> Option<std::path::PathBuf> {
+    let temp_dir = std::env::temp_dir();
+    let epoch = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok()?.as_millis();
+    let out_path = temp_dir.join(format!("pixora_gen_{epoch}.png"));
+    let py_script = std::path::Path::new("tools/ai_generate.py");
+    if py_script.exists() {
+        let mut cmd = std::process::Command::new("python");
+        cmd.arg(py_script)
+            .arg("--prompt").arg(prompt)
+            .arg("--width").arg(w.clamp(256, 1920).to_string())
+            .arg("--height").arg(h.clamp(256, 1920).to_string())
+            .arg("--out").arg(&out_path);
+        if let Ok(status) = cmd.status() {
+            if status.success() && out_path.exists() {
+                return Some(out_path);
+            }
+        }
+    }
+    None
+}
+
 fn can_generative_fill(s: &Session) -> std::result::Result<(), String> {
     pixel_layer(s)?;
-    let d = s.active().ok_or("no document open")?;
-    if d.doc.selection.as_ref().is_none_or(|m| m.content_bounds().is_empty()) {
-        return Err("make a selection around what to generate".into());
-    }
+    let _ = s.active().ok_or("no document open")?;
     Ok(())
 }
 
 fn generative_fill(s: &mut Session, p: &Value) -> Result<Value> {
-    let prompt = p.get("prompt").and_then(Value::as_str).unwrap_or("").to_string();
+    let prompt = p.get("prompt").and_then(Value::as_str).unwrap_or("").trim().to_string();
     let seed = p.get("seed").and_then(Value::as_u64).unwrap_or(1);
     let output = p.get("output").and_then(Value::as_str).unwrap_or("new");
+
+    let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
+    let canvas = doc.bounds();
+    let cw = canvas.width() as u32;
+    let ch = canvas.height() as u32;
+    let has_sel = doc.selection.as_ref().is_some_and(|m| !m.content_bounds().is_empty());
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        if let Some(path) = try_ai_generate(&prompt, cw, ch) {
+            let place_res = s.execute("file.placeEmbedded", json!({
+                "path": path.to_string_lossy(),
+                "smartObject": false,
+                "fit": true
+            }));
+            if let Ok(res) = place_res {
+                if has_sel {
+                    let _ = s.execute("layer.layerMask.revealSelection", json!({}));
+                }
+                let lid = res.get("layer").and_then(Value::as_u64);
+                if let Some(lid) = lid {
+                    let p_clone = if prompt.is_empty() { "AI Studio Background".into() } else { prompt.clone() };
+                    let _ = s.edit("Rename Generative Fill", |doc, _| {
+                        if let Some(l) = doc.layer_mut(LayerId(lid)) {
+                            l.name = format!("Generative Fill: {p_clone}");
+                        }
+                        Ok(())
+                    });
+                }
+                let _ = std::fs::remove_file(&path);
+                return Ok(json!({
+                    "layer": lid,
+                    "prompt": prompt,
+                    "variations": 3,
+                    "activeVariation": 1
+                }));
+            }
+            let _ = std::fs::remove_file(&path);
+        }
+    }
+
+    if !has_sel {
+        return Err(bad("edit.generativeFill", "make a selection around what to generate"));
+    }
+
     let caf_params = json!({
         "sampling": "auto",
         "colorAdaptation": "high",

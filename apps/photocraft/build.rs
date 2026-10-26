@@ -25,7 +25,7 @@ fn main() {
         .set("FileDescription", "Pixora Studio — Professional Photo Editor")
         .set("CompanyName", "IT Amadersomaj Inc.")
         .set("LegalCopyright", "Copyright (c) 2026 IT Amadersomaj Inc. and contributors. Portions copyright (c) original authors. MIT OR Apache-2.0.")
-        .set("OriginalFilename", "photocraft.exe")
+        .set("OriginalFilename", "pixora-studio.exe")
         .set("InternalName", "pixora-studio");
     if let Err(e) = res.compile() {
         if std::env::var_os("PHOTOCRAFT_REQUIRE_WINRES").is_some() {

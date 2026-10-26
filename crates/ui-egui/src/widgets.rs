@@ -1473,8 +1473,26 @@ pub fn button_height(ctx: &egui::Context) -> f32 {
     if Tokens::get(ctx).pro { 28.0 } else { 30.0 }
 }
 
+/// Strips internal mnemonic markers such as `(Y)es` or `Ja (Y)` for clean, modern visual rendering.
+fn clean_mnemonic_label(label: &str) -> std::borrow::Cow<'_, str> {
+    if let Some(rest) = label.strip_prefix('(') {
+        if let Some((first, remainder)) = rest.split_once(')') {
+            if first.len() == 1 {
+                return std::borrow::Cow::Owned(format!("{first}{remainder}"));
+            }
+        }
+    }
+    if let Some((before, after)) = label.rsplit_once(" (") {
+        if after.len() == 2 && after.ends_with(')') {
+            return std::borrow::Cow::Borrowed(before);
+        }
+    }
+    std::borrow::Cow::Borrowed(label)
+}
+
 fn button_layout(ui: &Ui, label: &str, min_width: f32, height: Option<f32>, fg: Color32) -> (std::sync::Arc<egui::Galley>, Vec2) {
-    let galley = ui.painter().layout_no_wrap(tl!(label).to_owned(), theme::medium(13.0), fg);
+    let clean = clean_mnemonic_label(label);
+    let galley = ui.painter().layout_no_wrap(tl!(&clean).to_owned(), theme::medium(13.0), fg);
     let h = height.unwrap_or(button_height(ui.ctx()));
     let size = vec2((galley.size().x + 28.0).max(min_width), h);
     (galley, size)

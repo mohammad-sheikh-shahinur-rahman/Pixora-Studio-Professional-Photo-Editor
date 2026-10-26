@@ -1,4 +1,4 @@
-//! Process-level tests of the `photocraft-cli` binary.
+//! Process-level tests of the `pixora-studio-cli` binary.
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
@@ -7,7 +7,7 @@ use std::process::{Command, Stdio};
 use serde_json::{Value, json};
 
 fn bin() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_photocraft-cli"))
+    Command::new(env!("CARGO_BIN_EXE_pixora-studio-cli"))
 }
 
 fn tmp(name: &str) -> PathBuf {
@@ -40,7 +40,7 @@ fn usage_and_unknown_command() {
     let (out, _) = ok(bin().arg("--help"));
     assert!(out.contains("convert"));
     let (out, _) = ok(bin().arg("--version"));
-    assert!(out.starts_with("photocraft-cli "));
+    assert!(out.starts_with("pixora-studio-cli "));
 }
 
 /// #423: `<subcommand> --help` and `-h` print usage and return at once (no inputs read, no files
@@ -53,7 +53,7 @@ fn every_subcommand_answers_help() {
             let o = bin().current_dir(&d).arg(sub).arg(help).arg("--out").arg("x.png").stdin(Stdio::null()).output().unwrap();
             let out = String::from_utf8_lossy(&o.stdout);
             assert_eq!(o.status.code(), Some(0), "{sub} {help}: {}", String::from_utf8_lossy(&o.stderr));
-            assert!(out.contains("USAGE") && out.contains("photocraft-cli batch"), "{sub} {help}: {out}");
+            assert!(out.contains("USAGE") && out.contains("pixora-studio-cli batch"), "{sub} {help}: {out}");
         }
     }
     // Help where a flag's value should be is still help, not a missing value or a file named `-h`.
@@ -1019,7 +1019,7 @@ fn top_level_help_version_and_no_arguments() {
     for version in ["--version", "version"] {
         let (code, out, err) = invoke(&[version]);
         assert_eq!((code, err.as_str()), (0, ""), "{version}");
-        assert!(out.starts_with("photocraft-cli "), "{version}: {out}");
+        assert!(out.starts_with("pixora-studio-cli "), "{version}: {out}");
     }
     let (code, out, err) = invoke(&["frobnicate"]);
     assert_eq!((code, out.is_empty()), (2, true));

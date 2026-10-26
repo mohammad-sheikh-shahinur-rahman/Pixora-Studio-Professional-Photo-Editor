@@ -82,7 +82,7 @@
   <Fragment>
     <ComponentGroup Id="PhotocraftFiles" Directory="INSTALLFOLDER">
       <Component Id="PhotocraftApp" Guid="A6DE41B7-A80F-4C59-A17E-BB68065BF67E">
-        <File Id="PhotocraftExe" Source="$(var.BinDir)\photocraft.exe" KeyPath="yes">
+        <File Id="PhotocraftExe" Source="$(var.BinDir)\pixora-studio.exe" KeyPath="yes">
           <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="Pixora Studio"
               Description="Pixora Studio — Professional Photo Editor" WorkingDirectory="INSTALLFOLDER" Advertise="yes"
               Icon="PixoraIcon.exe" IconIndex="0" />
@@ -123,37 +123,37 @@
         <RegistryValue Root="HKLM" Key="Software\Classes\.ico\OpenWithProgids" Name="Pixora.Image" Value="" Type="string" />
 
         <!-- "Open with" app list and the Run dialog (Win+R "photocraft"). -->
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe" Name="FriendlyAppName" Value="Pixora Studio" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".pix" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".pixora" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".pcraft" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".psd" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".psb" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".pdn" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".ora" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".kra" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".krz" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".png" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".jpg" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".jpeg" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".tif" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".tiff" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".webp" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".gif" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".bmp" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".tga" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".exr" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".hdr" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".avif" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".qoi" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\photocraft.exe\SupportedTypes" Name=".ico" Value="" Type="string" />
-        <RegistryValue Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\photocraft.exe" Value="[#PhotocraftExe]" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe" Name="FriendlyAppName" Value="Pixora Studio" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".pix" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".pixora" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".pcraft" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".psd" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".psb" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".pdn" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".ora" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".kra" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".krz" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".png" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".jpg" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".jpeg" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".tif" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".tiff" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".webp" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".gif" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".bmp" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".tga" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".exr" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".hdr" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".avif" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".qoi" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixora-studio.exe\SupportedTypes" Name=".ico" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\pixora-studio.exe" Value="[#PhotocraftExe]" Type="string" />
         <RegistryValue Root="HKLM" Key="Software\Pixora Studio" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
       </Component>
 
       <Component Id="PhotocraftCli">
-        <File Id="PhotocraftCliExe" Source="$(var.BinDir)\photocraft-cli.exe" KeyPath="yes" />
+        <File Id="PhotocraftCliExe" Source="$(var.BinDir)\pixora-studio-cli.exe" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>

@@ -208,8 +208,8 @@ cd Pixora-Studio-Professional-Photo-Editor
 cargo build --release -p photocraft -p photocraft-cli
 ```
 The compiled binaries will be generated at:
-- `target\release\photocraft.exe` (Pixora Studio GUI)
-- `target\release\photocraft-cli.exe` (Pixora Studio CLI)
+- `target\release\pixora-studio.exe` (Pixora Studio GUI)
+- `target\release\pixora-studio-cli.exe` (Pixora Studio CLI)
 
 ### Package Installers and Portable ZIP
 ```powershell

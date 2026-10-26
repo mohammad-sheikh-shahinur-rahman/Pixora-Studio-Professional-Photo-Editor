@@ -375,7 +375,7 @@ fn write_shim(droplet: &str) -> Result<String> {
     // quoted segment, emit a literal quote, then resume it.
     let quoted_abs = format!("'{}'", abs.replace('\'', "'\\''"));
     let body = format!(
-        "#!/bin/sh\n# Pixora Studio droplet: runs the action on the files given (or dropped).\nexec \"${{PHOTOCRAFT_CLI:-photocraft-cli}}\" droplet {quoted_abs} \"$@\"\n"
+        "#!/bin/sh\n# Pixora Studio droplet: runs the action on the files given (or dropped).\nexec \"${{PIXORA_STUDIO_CLI:-${{PHOTOCRAFT_CLI:-pixora-studio-cli}}}}\" droplet {quoted_abs} \"$@\"\n"
     );
     crate::file_cmds::write_file(&shim, body.as_bytes())?;
     #[cfg(unix)]

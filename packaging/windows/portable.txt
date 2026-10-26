@@ -1,6 +1,6 @@
 Pixora Studio portable mode
 
-While this file sits next to photocraft.exe, Pixora Studio keeps its preferences, brush presets,
+While this file sits next to pixora-studio.exe, Pixora Studio keeps its preferences, brush presets,
 crash-recovery autosaves and startup state in the PixoraStudioData folder beside it, and writes
 nothing to %APPDATA% or %LOCALAPPDATA%. Copy the whole folder to move Pixora Studio with its settings.
 

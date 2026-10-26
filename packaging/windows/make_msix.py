@@ -8,6 +8,8 @@ ROOT = os.path.abspath(".")
 STAGE = os.path.join(ROOT, "dist", "msix-stage")
 ASSETS = os.path.join(STAGE, "Assets")
 BIN_SRC = os.path.join(ROOT, "target", "x86_64-pc-windows-msvc", "release")
+if not os.path.exists(os.path.join(BIN_SRC, "pixora-studio.exe")):
+    BIN_SRC = os.path.join(ROOT, "target", "release")
 DIST = os.path.join(ROOT, "dist", "release")
 OUT_MSIX = os.path.join(DIST, "pixora-studio-0.15.1-windows-x64.msix")
 KIT_BIN = r"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64"
@@ -21,8 +23,8 @@ os.makedirs(ASSETS, exist_ok=True)
 os.makedirs(DIST, exist_ok=True)
 
 print("2. Copying binaries...")
-shutil.copy2(os.path.join(BIN_SRC, "photocraft.exe"), os.path.join(STAGE, "photocraft.exe"))
-shutil.copy2(os.path.join(BIN_SRC, "photocraft-cli.exe"), os.path.join(STAGE, "photocraft-cli.exe"))
+shutil.copy2(os.path.join(BIN_SRC, "pixora-studio.exe"), os.path.join(STAGE, "pixora-studio.exe"))
+shutil.copy2(os.path.join(BIN_SRC, "pixora-studio-cli.exe"), os.path.join(STAGE, "pixora-studio-cli.exe"))
 
 print("3. Generating complete Visual Assets set (Base + Scaled versions)...")
 icon = Image.open(os.path.join(ROOT, "assets", "app-icon", "pixora-1024.png"))
@@ -91,7 +93,7 @@ manifest = """<?xml version="1.0" encoding="utf-8"?>
 
   <Applications>
     <Application Id="PixoraStudio"
-      Executable="photocraft.exe"
+      Executable="pixora-studio.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
         DisplayName="Pixora Studio"

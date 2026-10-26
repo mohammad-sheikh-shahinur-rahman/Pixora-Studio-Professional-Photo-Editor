@@ -312,21 +312,75 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
     let labels = button_labels(mac, &buttons.iter().map(|b| (b.1, b.2)).collect::<Vec<_>>());
     let row: Vec<DialogButton> =
         buttons.iter().zip(&labels).map(|(b, label)| DialogButton::new(b.0, label, b.3).focus(focus && b.0 == ButtonRole::Default)).collect();
-    let modal = egui::Modal::new(egui::Id::new("discard-prompt")).show(ctx, |ui| {
-        ui.set_max_width(420.0);
-        ui.label(egui::RichText::new(tl!(&title)).font(crate::theme::semibold(15.0)));
-        ui.add_space(4.0);
-        crate::widgets::hairline(ui);
-        ui.add_space(8.0);
-        ui.label(message);
-        ui.add_space(12.0);
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 10.0;
-            if let Some(role) = crate::widgets::dialog_buttons(ui, &row) {
-                answer = buttons.iter().find(|b| b.0 == role).map(|b| b.4);
-            }
+    let t = crate::theme::Tokens::get(ctx);
+    let modal_frame = egui::Frame::new()
+        .fill(t.card)
+        .stroke(egui::Stroke::new(1.0, t.card_border))
+        .corner_radius(egui::CornerRadius::same(t.radius_lg as u8))
+        .shadow(egui::Shadow {
+            offset: [0, 10],
+            blur: 28,
+            spread: 0,
+            color: egui::Color32::from_black_alpha(150),
+        })
+        .inner_margin(egui::Margin::symmetric(24, 20));
+    let modal = egui::Modal::new(egui::Id::new("discard-prompt"))
+        .backdrop_color(egui::Color32::from_black_alpha(120))
+        .frame(modal_frame)
+        .show(ctx, |ui| {
+            ui.set_max_width(450.0);
+            ui.set_min_width(380.0);
+
+            // Modern Photoshop-style header with icon badge
+            ui.horizontal(|ui| {
+                let (badge_rect, _) = ui.allocate_exact_size(egui::vec2(32.0, 32.0), egui::Sense::hover());
+                let icon_color = if reverts { t.danger } else { t.accent };
+                ui.painter().circle_filled(badge_rect.center(), 16.0, icon_color.gamma_multiply(0.18));
+                ui.painter().circle_stroke(badge_rect.center(), 16.0, egui::Stroke::new(1.0, icon_color.gamma_multiply(0.4)));
+                let icon_glyph = if reverts { "↺" } else { "!" };
+                ui.painter().text(
+                    badge_rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    icon_glyph,
+                    crate::theme::semibold(16.0),
+                    icon_color,
+                );
+
+                ui.add_space(10.0);
+                ui.vertical(|ui| {
+                    ui.add_space(2.0);
+                    ui.label(
+                        egui::RichText::new(tl!(&title))
+                            .font(crate::theme::semibold(16.0))
+                            .color(t.text),
+                    );
+                });
+            });
+
+            ui.add_space(8.0);
+            ui.painter().hline(
+                ui.max_rect().x_range(),
+                ui.cursor().top(),
+                egui::Stroke::new(1.0, t.separator),
+            );
+            ui.add_space(14.0);
+
+            ui.label(
+                egui::RichText::new(message)
+                    .font(egui::FontId::proportional(13.0))
+                    .color(t.text)
+                    .line_height(Some(19.0)),
+            );
+
+            ui.add_space(20.0);
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.spacing_mut().item_spacing.x = 10.0;
+                if let Some(role) = crate::widgets::dialog_buttons(ui, &row) {
+                    answer = buttons.iter().find(|b| b.0 == role).map(|b| b.4);
+                }
+            });
         });
-    });
     if modal.should_close() {
         answer = Some(Answer::Cancel);
     }

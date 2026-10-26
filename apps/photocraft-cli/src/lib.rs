@@ -12,10 +12,10 @@ use photocraft_io::ExportOptions;
 use serde_json::{Value, json};
 
 pub const USAGE: &str = "\
-photocraft-cli: headless Pixora Studio
+pixora-studio-cli: headless Pixora Studio
 
 USAGE:
-  photocraft-cli convert <in> <out> [--format <ext>] [--quality <1-100>] [--in-place] [--tiff-layers] [--tiff-compression <none|lzw|zip>] [--tga-bits <24|32>] [--dpx-bits <8|10|12|16>] [--dds-compression <none|bc1|bc2|bc3>] [--dds-mipmaps] [--jpeg-format <baseline|optimized|progressive>]
+  pixora-studio-cli convert <in> <out> [--format <ext>] [--quality <1-100>] [--in-place] [--tiff-layers] [--tiff-compression <none|lzw|zip>] [--tga-bits <24|32>] [--dpx-bits <8|10|12|16>] [--dds-compression <none|bc1|bc2|bc3>] [--dds-mipmaps] [--jpeg-format <baseline|optimized|progressive>]
       Convert between formats (.pix, .psd, .png, .jpg, .tif, .webp, .exr, …).
       An <out> that is the <in> file is refused, as the result would replace the original;
       --in-place allows it.
@@ -30,13 +30,13 @@ USAGE:
       --jpeg-format picks a JPEG's scans, as JPEG Options does: baseline (the default), optimized
       (Huffman tables fitted to the image; RGB is written 4:2:0 and keeps the standard tables, so
       only Gray and CMYK shrink) or progressive.
-  photocraft-cli info <file> [--compact]
+  pixora-studio-cli info <file> [--compact]
       Print the document as JSON (size, mode, depth, layer tree).
-  photocraft-cli run (<file> | --new <json>) --cmd <id> [--params <json>] [--cmd …] [--out <file>] [--format <ext>] [--quality <1-100>] [--in-place] [--tiff-layers] [--tiff-compression <none|lzw|zip>] [--tga-bits <24|32>] [--dpx-bits <8|10|12|16>] [--dds-compression <none|bc1|bc2|bc3>] [--dds-mipmaps] [--jpeg-format <baseline|optimized|progressive>]
+  pixora-studio-cli run (<file> | --new <json>) --cmd <id> [--params <json>] [--cmd …] [--out <file>] [--format <ext>] [--quality <1-100>] [--in-place] [--tiff-layers] [--tiff-compression <none|lzw|zip>] [--tga-bits <24|32>] [--dpx-bits <8|10|12|16>] [--dds-compression <none|bc1|bc2|bc3>] [--dds-mipmaps] [--jpeg-format <baseline|optimized|progressive>]
       Open a file, run engine commands in order, save the result. Each --params
       applies to the preceding --cmd. Prints each command's JSON result. An --out that is the
       <file> is refused, as the result would replace the original; --in-place allows it.
-  photocraft-cli batch --actions <actions.json|set.atn> [--action <name>] --in <dir> --out <dir> [--format <ext>] [--quality <1-100>] [--in-place] [--tiff-layers] [--tiff-compression <none|lzw|zip>] [--tga-bits <24|32>] [--dpx-bits <8|10|12|16>] [--dds-compression <none|bc1|bc2|bc3>] [--dds-mipmaps] [--jpeg-format <baseline|optimized|progressive>]
+  pixora-studio-cli batch --actions <actions.json|set.atn> [--action <name>] --in <dir> --out <dir> [--format <ext>] [--quality <1-100>] [--in-place] [--tiff-layers] [--tiff-compression <none|lzw|zip>] [--tga-bits <24|32>] [--dpx-bits <8|10|12|16>] [--dds-compression <none|bc1|bc2|bc3>] [--dds-mipmaps] [--jpeg-format <baseline|optimized|progressive>]
       Apply an action list to every image in a directory. A Photoshop Actions file (.atn) is a
       set: its action --action names plays, as below. JSON steps are [id, params] pairs,
       {\"command\": id, \"params\": {…}} objects or bare ids, as a recorded action or droplet stores them
@@ -45,18 +45,18 @@ USAGE:
       when the set holds more than one) with the whole set loaded, so its steps can play other actions
       of the set. An --out folder that is the --in folder is refused, as the results would replace
       the originals; --in-place allows it.
-  photocraft-cli droplet <file.pcdroplet> <file-or-dir>… [--out <dir>]
+  pixora-studio-cli droplet <file.pcdroplet> <file-or-dir>… [--out <dir>]
       Run a droplet (File › Automate › Create Droplet) on images and folders.
-  photocraft-cli commands [--json] [--filter <text>]
+  pixora-studio-cli commands [--json] [--filter <text>]
       List the engine command registry.
-  photocraft-cli mcp [--bridge <127.0.0.1:port>] [--control-token <64-hex> | --control-token-file <path>]
+  pixora-studio-cli mcp [--bridge <127.0.0.1:port>] [--control-token <64-hex> | --control-token-file <path>]
       [--automation-read-root <dir>] [--automation-write-root <dir>]
       Run the MCP server on stdio (headless engine, or bridge to a running `photocraft --control <port>`).
       Headless: each root grants that direction of file access; an omitted root denies it.
       Prefer absolute root paths in MCP client configurations.
       Bridge: set roots on the desktop app; CLI root flags are rejected. Explicit token flags
       require --bridge; credentials can also use PHOTOCRAFT_CONTROL_TOKEN or PHOTOCRAFT_CONTROL_TOKEN_FILE.
-  photocraft-cli serve [--port <port>] [--control-token <64-hex> | --control-token-file <path>]
+  pixora-studio-cli serve [--port <port>] [--control-token <64-hex> | --control-token-file <path>]
       [--automation-read-root <dir>] [--automation-write-root <dir>]
       Keep one headless session open and answer JSON lines ({\"id\",\"method\",\"params\"}) on stdio,
       or on 127.0.0.1:<port>. Methods: engine.execute, jobs.list/cancel, engine.commands,
@@ -64,7 +64,7 @@ USAGE:
       (docs/control-protocol.md#headless-server).
       Explicit token flags require --port. Stdio needs no control token.
 
-  photocraft-cli <subcommand> --help (or -h) prints this text. A flag the subcommand doesn't take is
+  pixora-studio-cli <subcommand> --help (or -h) prints this text. A flag the subcommand doesn't take is
   an error. mcp and serve take no positional arguments; their options cannot be repeated or empty.
 ";
 
@@ -254,7 +254,7 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             return 0;
         }
         "--version" | "version" => {
-            let _ = writeln!(out, "photocraft-cli {}", photocraft_engine::build_info::long_version());
+            let _ = writeln!(out, "pixora-studio-cli {}", photocraft_engine::build_info::long_version());
             return 0;
         }
         _ => {}
@@ -703,12 +703,12 @@ fn serve(a: &Args, err: &mut dyn Write) -> R {
             let (supplied, token_file) = security::token_inputs(a.get("--control-token").map(str::to_owned), a.get("--control-token-file").map(PathBuf::from));
             let token = security::server_token(supplied.as_deref(), token_file.as_deref()).map_err(|e| e.to_string())?;
             if let Some(path) = &token_file {
-                let _ = writeln!(err, "photocraft-cli control token file: {}", path.display());
+                let _ = writeln!(err, "pixora-studio-cli control token file: {}", path.display());
             } else if supplied.is_none() {
-                let _ = writeln!(err, "photocraft-cli control token: {token}");
+                let _ = writeln!(err, "pixora-studio-cli control token: {token}");
             }
             photocraft_automation::rpc::serve_tcp(&addr, h, token, |local| {
-                let _ = writeln!(err, "photocraft-cli serving on {local}");
+                let _ = writeln!(err, "pixora-studio-cli serving on {local}");
             })
             .map_err(|e| e.to_string())
         }
@@ -747,7 +747,7 @@ mod missing_font_warning_tests {
     #[test]
     fn missing_typeface_is_reported_by_run_info_and_convert() {
         let family = "DefinitelyMissingPhotoCraftTypeface1251";
-        let folder = std::env::temp_dir().join(format!("photocraft-cli-font-warnings-{}", std::process::id()));
+        let folder = std::env::temp_dir().join(format!("pixora-studio-cli-font-warnings-{}", std::process::id()));
         std::fs::create_dir_all(&folder).unwrap();
         let native = folder.join("missing.pcraft");
         let png = folder.join("missing.png");
@@ -797,7 +797,7 @@ mod missing_font_warning_tests {
 
     #[test]
     fn convert_reads_and_writes_openraster() {
-        let folder = std::env::temp_dir().join(format!("photocraft-cli-ora-{}", std::process::id()));
+        let folder = std::env::temp_dir().join(format!("pixora-studio-cli-ora-{}", std::process::id()));
         std::fs::create_dir_all(&folder).unwrap();
         let path = |name: &str| folder.join(name).to_string_lossy().to_string();
         let (native, ora, png) = (path("layers.pcraft"), path("layers.ora"), path("back.png"));
@@ -822,7 +822,7 @@ mod missing_font_warning_tests {
 
     #[test]
     fn no_type_layers_do_not_produce_missing_font_warnings() {
-        let folder = std::env::temp_dir().join(format!("photocraft-cli-no-font-warning-{}", std::process::id()));
+        let folder = std::env::temp_dir().join(format!("pixora-studio-cli-no-font-warning-{}", std::process::id()));
         std::fs::create_dir_all(&folder).unwrap();
         let native = folder.join("blank.pcraft");
         let png = folder.join("blank.png");
@@ -857,7 +857,7 @@ mod batch_action_set_tests {
     /// failure inside the called action fails the file, and a self-call stops instead of looping.
     #[test]
     fn batch_plays_an_action_that_calls_another_action_of_its_set() {
-        let dir = std::env::temp_dir().join(format!("photocraft-cli-action-set-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("pixora-studio-cli-action-set-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let path = |name: &str| dir.join(name).to_string_lossy().to_string();
         std::fs::create_dir_all(dir.join("in")).unwrap();
@@ -896,7 +896,7 @@ mod batch_action_set_tests {
     /// action, and unchecked steps stay unchecked once they are gone (#6860).
     #[test]
     fn batch_skips_save_and_view_steps_inside_an_action_set() {
-        let dir = std::env::temp_dir().join(format!("photocraft-cli-action-set-save-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("pixora-studio-cli-action-set-save-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let path = |name: &str| dir.join(name).to_string_lossy().to_string();
         std::fs::create_dir_all(dir.join("in")).unwrap();
