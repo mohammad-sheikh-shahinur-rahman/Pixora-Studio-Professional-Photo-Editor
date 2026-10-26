@@ -29,13 +29,14 @@ contextual, command-ID and plural translations; missing entries fall back to Eng
 | Tiếng Việt | `vi` | one form |
 | Srpski | `sr` | one / few / many (teens use many) |
 | हिन्दी | `hi` | one / other |
+| বাংলা | `bn` | one / other |
 
 Languages registered with `complete_menus` cover the current menu labels, `tl!` literals, blend
 mode names, and generated preference labels. A string a catalog lacks shows in English:
 `cargo xtask i18n-coverage` lists the missing strings per language, and `cargo xtask ci` prints
-that list as its last step without failing. Vietnamese (`vi`) is
-selectable, resolves regional tags such as `vi-VN`, and covers all current stable localization
-keys. `complete_menus` remains false while generated/dynamic long-tail labels are still under
+that list as its last step without failing. Vietnamese (`vi`) and Bengali (`bn`) are
+selectable, resolve regional tags (e.g. `vi-VN`, `bn-BD`, `bn-IN`), cover all measured keys
+(100%), and have `complete_menus: true`. Hindi (`hi`) `complete_menus` remains false while its long-tail labels are still under
 review. This does not include every engine error or status message: those remain English, as do
 automation command IDs and user-provided document, layer and preset names.
 

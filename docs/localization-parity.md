@@ -1,6 +1,6 @@
 # Localization parity
 
-> **Last reviewed:** 2026-10-12 · **Last updated:** 2026-10-22 · **Change:** minor (Arabic: paragraph direction buttons, #6793; previously minor: Russian dynamic labels) · **Target:** Adobe Photoshop 2026
+> **Last reviewed:** 2026-10-12 · **Last updated:** 2026-10-26 · **Change:** minor (Bengali added at 100% of measured keys; previously minor: Arabic paragraph direction buttons, #6793) · **Target:** Adobe Photoshop 2026
 
 Per-language status of PhotoCraft's UI. How catalogs work and how to add one:
 [`localization.md`](localization.md). Language notes: [Korean](localization-ko.md), [Spanish](localization-es.md),
@@ -54,7 +54,9 @@ Polish `pl` (3,366), Greek `el` (3,481), Dutch `nl` (3,568), Italian `it` (4,164
 other catalogs translate; reviewed by a native speaker, [notes](localization-it.md)). Turkish `tr`
 (3,731 rows) also covers every measured key. Serbian `sr` (4,022 rows, Latin script, Ekavian, added 2026-10-12) covers every
 measured key and the union of the other catalogs' dynamic labels; its one/few/many plurals reuse
-the Russian rule.
+the Russian rule. Bengali `bn` (2,066 rows, one/other plurals, added 2026-10-26; `bn`, `bn-BD`
+and `bn-IN` locales resolve to it) covers every measured key (2,060 / 2,060); engine messages
+remain English, so its status is `partial` like the others.
 
 Czech UI follow-up (2026-10-11): status and notice wrappers, hardware labels, brush and
 transform accessibility names, rasterization prompts, profile mismatch messages and preset
