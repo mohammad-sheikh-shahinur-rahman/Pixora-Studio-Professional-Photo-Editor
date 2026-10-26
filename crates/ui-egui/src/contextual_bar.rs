@@ -43,13 +43,13 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let avail = ui.available_rect_before_wrap();
     let bar_height = 38.0;
     let bar_width = if state.prompt_open {
-        440.0
+        470.0
     } else if has_selection {
-        480.0
+        490.0
     } else if is_text {
         320.0
     } else {
-        390.0
+        530.0
     };
 
     let default_pos = Pos2::new(
@@ -97,54 +97,57 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
             if state.prompt_open {
                 // Inline Generative Fill Prompt input
                 let text_edit = egui::TextEdit::singleline(&mut state.prompt_text)
-                    .hint_text("Describe what to generate, or leave empty…")
+                    .hint_text(tl!("Describe what to generate, or leave empty…"))
                     .desired_width(260.0);
                 let resp = ui.add(text_edit);
                 if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                     submit_prompt = true;
                 }
 
-                if widgets::primary_button(ui, "Generate", 76.0).clicked() {
+                if widgets::primary_button(ui, tl!("Generate"), 76.0).clicked() {
                     submit_prompt = true;
                 }
-                if widgets::secondary_button(ui, "Cancel", 56.0).clicked() {
+                if widgets::secondary_button(ui, tl!("Cancel"), 56.0).clicked() {
                     close_prompt = true;
                 }
             } else if has_selection {
-                // Selection Context
-                if widgets::primary_button(ui, "🪄 Generative Fill", 116.0).clicked() {
+                // Selection Context (Photoshop parity)
+                if widgets::primary_button(ui, tl!("Generative Fill"), 116.0).clicked() {
                     toggle_prompt = true;
                 }
-                if widgets::secondary_button(ui, "Select & Mask", 94.0).clicked() {
-                    let _ = app.run("select.selectAndMask", json!({}));
+                if widgets::secondary_button(ui, tl!("Select and Mask…"), 108.0).clicked() {
+                    let _ = crate::menus::invoke(app, &ctx, "select.selectAndMask", json!({}));
                 }
-                if widgets::secondary_button(ui, "Refine Hair", 78.0).clicked() {
+                if widgets::secondary_button(ui, tl!("Refine Hair"), 78.0).clicked() {
                     let _ = app.run("select.refineHair", json!({}));
                 }
-                if widgets::secondary_button(ui, "Invert", 52.0).clicked() {
+                if widgets::secondary_button(ui, tl!("Invert"), 52.0).clicked() {
                     let _ = app.run("select.inverse", json!({}));
                 }
-                if widgets::secondary_button(ui, "Deselect", 64.0).clicked() {
+                if widgets::secondary_button(ui, tl!("Deselect"), 64.0).clicked() {
                     let _ = app.run("select.deselect", json!({}));
                 }
             } else if is_text {
                 // Type Context
-                ui.label(egui::RichText::new("Text Layer").size(12.0).color(t.text));
-                if widgets::primary_button(ui, "Commit ✔", 75.0).clicked() {
+                ui.label(egui::RichText::new(tl!("Text Layer")).size(12.0).color(t.text));
+                if widgets::primary_button(ui, tl!("Commit"), 70.0).clicked() {
                     let _ = app.run("type.commit", json!({}));
                 }
-                if widgets::secondary_button(ui, "Cancel ✖", 70.0).clicked() {
+                if widgets::secondary_button(ui, tl!("Cancel"), 60.0).clicked() {
                     let _ = app.run("type.cancel", json!({}));
                 }
             } else {
-                // Default Photo Context
-                if widgets::secondary_button(ui, "🔍 Select Subject", 112.0).clicked() {
+                // Default Photo Context (Photoshop parity: Select Subject, Remove Background, Adjust Colors, Generative Fill)
+                if widgets::secondary_button(ui, tl!("Select Subject"), 112.0).clicked() {
                     let _ = app.run("select.subject", json!({}));
                 }
-                if widgets::secondary_button(ui, "✂ Remove Background", 140.0).clicked() {
+                if widgets::secondary_button(ui, tl!("Remove Background"), 140.0).clicked() {
                     let _ = app.run("layer.removeBackground", json!({}));
                 }
-                if widgets::secondary_button(ui, "🪄 Generative Fill…", 116.0).clicked() {
+                if widgets::secondary_button(ui, tl!("Adjust Colors"), 100.0).clicked() {
+                    let _ = crate::menus::invoke(app, &ctx, "image.adjustments.curves", json!({}));
+                }
+                if widgets::secondary_button(ui, tl!("Generative Fill…"), 116.0).clicked() {
                     toggle_prompt = true;
                 }
             }
@@ -153,14 +156,14 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
 
             // Overflow menu
             ui.menu_button("⋯", |ui| {
-                if ui.checkbox(&mut state.pinned, "Pin Bar Position").clicked() {
+                if ui.checkbox(&mut state.pinned, tl!("Pin Bar Position")).clicked() {
                     ui.close();
                 }
-                if ui.button("Reset Position").clicked() {
+                if ui.button(tl!("Reset Position")).clicked() {
                     reset_pos = true;
                     ui.close();
                 }
-                if ui.button("Hide Task Bar").clicked() {
+                if ui.button(tl!("Hide Task Bar")).clicked() {
                     hide_bar = true;
                     ui.close();
                 }
@@ -184,10 +187,28 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
         state.prompt_open = false;
         let prompt_clone = state.prompt_text.clone();
         state.prompt_text.clear();
-        let _ = app.run("edit.generativeFill", json!({
-            "prompt": prompt_clone,
-            "output": "new"
-        }));
+
+        let mut has_sel = app.session.active().is_some_and(|d| {
+            d.doc.selection.as_ref().is_some_and(|m| !m.content_bounds().is_empty())
+        });
+
+        // If no selection is active, auto-select subject first (Photoshop parity)
+        if !has_sel {
+            let _ = app.run("select.subject", json!({}));
+            has_sel = app.session.active().is_some_and(|d| {
+                d.doc.selection.as_ref().is_some_and(|m| !m.content_bounds().is_empty())
+            });
+        }
+
+        if has_sel {
+            let _ = app.run("edit.generativeFill", json!({
+                "prompt": prompt_clone,
+                "output": "new"
+            }));
+        } else {
+            app.ui.status = tl!("Please make a selection with Lasso (L) or Marquee (M) first to apply Generative Fill.").into();
+            app.ui.status_error = true;
+        }
     }
 
     ctx.data_mut(|d| d.insert_temp(state_id, state));
