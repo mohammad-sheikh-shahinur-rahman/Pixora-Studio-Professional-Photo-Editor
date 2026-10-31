@@ -12,10 +12,47 @@ pub const GITHUB: &str = "https://github.com/mohammad-sheikh-shahinur-rahman/Pix
 pub const ISSUES: &str = "https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor/issues";
 
 /// Help-menu link commands: (id, url). Labels live in `menus::UI_COMMANDS`.
-pub const COMMANDS: &[(&str, &str)] = &[];
+pub const COMMANDS: &[(&str, &str)] = &[("help.reportIssue", ISSUES)];
 
 pub fn url_for(id: &str) -> Option<&'static str> {
     COMMANDS.iter().find(|c| c.0 == id).map(|c| c.1)
+}
+
+/// One query string value, percent-encoded (RFC 3986 unreserved characters stay literal).
+pub fn url_query(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for b in s.as_bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(*b as char)
+            }
+            other => out.push_str(&format!("%{other:02X}")),
+        }
+    }
+    out
+}
+
+/// A new-issue URL on the project tracker, pre-filled with `title` and `body`. The reporting
+/// mechanism the Microsoft Store requires of generative-AI features (policy 11.16).
+pub fn report_url(title: &str, body: &str) -> String {
+    format!("{ISSUES}/new?title={}&body={}", url_query(title), url_query(body))
+}
+
+/// Open a pre-filled issue reporting a generated (AI) result. `layer` is the Generative Fill
+/// layer's id when the report comes from its context menu; the prompt it was made from is read
+/// from the layer name (`edit.generativeFill` renames layers to "Generative Fill: {prompt}").
+pub fn report_generated(app: &mut PhotocraftApp, ctx: &egui::Context, layer: Option<u64>) -> Value {
+    let name = layer
+        .and_then(|id| app.session.active().and_then(|s| s.doc.layer(photocraft_doc::LayerId(id))))
+        .map(|l| l.name.clone())
+        .unwrap_or_else(|| "Generative Fill".into());
+    let prompt = name.strip_prefix("Generative Fill: ").unwrap_or(&name);
+    let title = format!("Report generated content: {prompt}");
+    let body = format!(
+        "Version: {version}\nGenerated-content prompt: {prompt}\n\nPlease describe what is inappropriate or wrong about this generated result, and attach a screenshot if you can.\n\n(Pixora Studio records the prompt the fill was made from but stores no image outside your document.)",
+        version = photocraft_engine::build_info::long_version(),
+    );
+    open(app, ctx, &report_url(&title, &body))
 }
 
 /// Open `url` in the system browser (a new tab on the web) and note it in the status bar. Prefers
@@ -104,6 +141,7 @@ mod tests {
             help,
             [
                 "help.checkForUpdates",
+                "help.reportIssue",
                 "---",
                 "help.systemInfo",
                 "help.about"
@@ -115,14 +153,40 @@ mod tests {
     fn link_commands_open_their_urls() {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
-        for (id, url) in [
-            ("help.discord", "https://discord.gg/pixorastudio"),
-            ("help.website", "https://pixora.amadersomaj.com"),
-            ("help.github", "https://github.com/mohammad-sheikh-shahinur-rahman/Pixora-Studio-Professional-Photo-Editor"),
-        ] {
-            let r = crate::menus::invoke(&mut app, &ctx, id, serde_json::json!({})).unwrap();
-            assert_eq!(r["url"], url);
-            assert_eq!(app.ui.status, format!("Opened {url}"));
-        }
+        let (id, url) = ("help.reportIssue", ISSUES);
+        let r = crate::menus::invoke(&mut app, &ctx, id, serde_json::json!({})).unwrap();
+        assert_eq!(r["url"], url);
+        assert_eq!(app.ui.status, format!("Opened {url}"));
+    }
+
+    #[test]
+    fn query_values_are_percent_encoded() {
+        assert_eq!(url_query("plain"), "plain");
+        assert_eq!(url_query("a b&c=d/e?f"), "a%20b%26c%3Dd%2Fe%3Ff");
+        assert_eq!(url_query("cli-ent.ien_t~1"), "cli-ent.ien_t~1");
+        // Bengali and other non-ASCII texts survive as UTF-8, not as mojibake.
+        assert!(url_query("ছবি").starts_with(&format!("%{:02X}%{:02X}", 0xE0, 0xA6)), "{}", url_query("ছবি"));
+    }
+
+    #[test]
+    fn report_generated_opens_a_prefilled_issue() {
+        use std::sync::{Arc, Mutex};
+        let opened: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        let rec = opened.clone();
+        let services = crate::Services {
+            open_url: Some(Box::new(move |u: &str| {
+                rec.lock().unwrap().push(u.to_string());
+                Ok(())
+            })),
+            ..Default::default()
+        };
+        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
+        let ctx = egui::Context::default();
+        report_generated(&mut app, &ctx, None);
+        let url = opened.lock().unwrap().last().cloned().unwrap_or_default();
+        assert!(url.starts_with(ISSUES));
+        assert!(url.contains("/new?title="), "{url}");
+        assert!(url.contains(url_query("Generative Fill").as_str()), "{url}");
+        assert!(!url.contains(' '), "{url}");
     }
 }

@@ -542,8 +542,7 @@ fn open_on(
     let out = vec![[0u8; 4]; proxy.w * proxy.h];
     let center = [f64::from(canvas.x0 + canvas.x1) / 2.0, f64::from(canvas.y0 + canvas.y1) / 2.0];
     let detected = detect_faces(&surf);
-    let mut opts = LiquifyOpts::default();
-    opts.faces = detected;
+    let opts = LiquifyOpts { faces: detected, ..LiquifyOpts::default() };
     let mut d = LiquifyDialog {
         document: st.doc.id,
         layer,
@@ -1073,12 +1072,12 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                     face_changed = true;
                 }
 
-                if face_changed {
-                    if let Some(face) = d.opts.faces.get(d.opts.active_face) {
-                        let dirty = d.field.apply_face(face, &d.opts.face_params);
-                        d.mark(dirty, false);
-                        d.render_dirty();
-                    }
+                if face_changed
+                    && let Some(face) = d.opts.faces.get(d.opts.active_face)
+                {
+                    let dirty = d.field.apply_face(face, &d.opts.face_params);
+                    d.mark(dirty, false);
+                    d.render_dirty();
                 }
             }
             widgets::hairline(ui);

@@ -1475,17 +1475,17 @@ pub fn button_height(ctx: &egui::Context) -> f32 {
 
 /// Strips internal mnemonic markers such as `(Y)es` or `Ja (Y)` for clean, modern visual rendering.
 fn clean_mnemonic_label(label: &str) -> std::borrow::Cow<'_, str> {
-    if let Some(rest) = label.strip_prefix('(') {
-        if let Some((first, remainder)) = rest.split_once(')') {
-            if first.len() == 1 {
-                return std::borrow::Cow::Owned(format!("{first}{remainder}"));
-            }
-        }
+    if let Some(rest) = label.strip_prefix('(')
+        && let Some((first, remainder)) = rest.split_once(')')
+        && first.len() == 1
+    {
+        return std::borrow::Cow::Owned(format!("{first}{remainder}"));
     }
-    if let Some((before, after)) = label.rsplit_once(" (") {
-        if after.len() == 2 && after.ends_with(')') {
-            return std::borrow::Cow::Borrowed(before);
-        }
+    if let Some((before, after)) = label.rsplit_once(" (")
+        && after.len() == 2
+        && after.ends_with(')')
+    {
+        return std::borrow::Cow::Borrowed(before);
     }
     std::borrow::Cow::Borrowed(label)
 }

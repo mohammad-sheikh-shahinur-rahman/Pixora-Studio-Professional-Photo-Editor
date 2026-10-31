@@ -2960,6 +2960,12 @@ fn layers(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
             app.ui.dock.collapsed.retain(|g| *g != crate::dock::Group::Properties);
             continue;
         }
+        // The layer menu's "Report Generated Content…" opens a pre-filled issue for the layer's
+        // AI-generated result (the app stores' reporting rule for generative features).
+        if id == "ui.reportGeneratedContent" {
+            crate::links::report_generated(app, ui.ctx(), p.get("layer").and_then(Value::as_u64));
+            continue;
+        }
         if p.is_null() || id == "layer.newFillLayer.solidColor" {
             // Context-menu items and the Layers footer's Solid Color… action behave like
             // their menu-bar twins. In particular, a new Solid Color fill opens its picker.

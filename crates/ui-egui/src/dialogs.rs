@@ -697,6 +697,13 @@ fn about_tab_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, tab: &str) {
                 );
                 ui.add_space(14.0);
                 ui.weak("egui · wgpu · Rust");
+                ui.add_space(10.0);
+                // The store requires a visible means to report problems, including AI-generated
+                // content (policy 11.16): the About window carries the report link too.
+                let report = egui::RichText::new(tl!("Report an Issue…")).font(egui::FontId::proportional(12.5)).color(t.accent);
+                if ui.link(report).clicked() {
+                    crate::links::open(app, ui.ctx(), crate::links::ISSUES);
+                }
             });
         }
     }

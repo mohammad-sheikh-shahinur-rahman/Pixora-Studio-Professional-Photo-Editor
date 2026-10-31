@@ -222,63 +222,133 @@ pub fn render_sky(preset: SkyPreset, w: usize, h: usize, p: &SkyReplaceParams) -
 
 /// Refines sky mask with Shift Edge (-100..100) and Fade Edge (0..100).
 pub fn refine_sky_mask(mask: &[u8], w: usize, h: usize, shift_edge: f32, fade_edge: f32) -> Vec<u8> {
-    if mask.is_empty() || w == 0 || h == 0 {
+    if w == 0 || h == 0 {
         return Vec::new();
     }
-    let mut out = mask.to_vec();
+    let total = match w.checked_mul(h) {
+        Some(n) => n,
+        None => return Vec::new(),
+    };
+    let mut out = vec![0u8; total];
+    let copy_len = mask.len().min(total);
+    if let (Some(src), Some(dst)) = (mask.get(..copy_len), out.get_mut(..copy_len)) {
+        dst.copy_from_slice(src);
+    }
 
     // 1. Shift edge: if shift > 0, expand sky (dilate); if shift < 0, contract sky (erode)
     let shift_steps = ((shift_edge / 100.0) * 4.0).round() as i32;
     if shift_steps != 0 {
         let mut shifted = out.clone();
         let dilate = shift_steps > 0;
-        let steps = shift_steps.unsigned_abs() as usize;
+        let steps = (shift_steps.unsigned_abs() as usize).min(8);
         for _ in 0..steps {
             let src = shifted.clone();
             for y in 0..h {
+                let y_off = match y.checked_mul(w) {
+                    Some(o) => o,
+                    None => continue,
+                };
                 for x in 0..w {
-                    let idx = y * w + x;
-                    let mut val = src[idx];
+                    let idx = y_off + x;
+                    let mut val = src.get(idx).copied().unwrap_or(0);
                     let neighbors = [
-                        (x > 0).then(|| idx - 1),
-                        (x + 1 < w).then(|| idx + 1),
-                        (y > 0).then(|| idx - w),
-                        (y + 1 < h).then(|| idx + w),
+                        (x > 0).then(|| idx.checked_sub(1)).flatten(),
+                        (x + 1 < w).then(|| idx.checked_add(1)).flatten(),
+                        (y > 0).then(|| idx.checked_sub(w)).flatten(),
+                        (y + 1 < h).then(|| idx.checked_add(w)).flatten(),
                     ];
                     for n in neighbors.into_iter().flatten() {
-                        if dilate {
-                            val = val.max(src[n]);
-                        } else {
-                            val = val.min(src[n]);
+                        if let Some(&nval) = src.get(n) {
+                            if dilate {
+                                val = val.max(nval);
+                            } else {
+                                val = val.min(nval);
+                            }
                         }
                     }
-                    shifted[idx] = val;
+                    if let Some(slot) = shifted.get_mut(idx) {
+                        *slot = val;
+                    }
                 }
             }
         }
         out = shifted;
     }
 
-    // 2. Fade edge: smooth the boundary transition
+    // 2. Fade edge: smooth the boundary transition with separable running-sum filter
     let radius = ((fade_edge / 100.0) * 8.0).round() as usize;
     if radius > 0 {
-        let mut blurred = vec![0u8; w * h];
         let r = radius.min(16);
+        // Horizontal pass
+        let mut tmp = vec![0u8; total];
         for y in 0..h {
+            let row_off = match y.checked_mul(w) {
+                Some(o) => o,
+                None => continue,
+            };
+            let mut sum = 0u32;
+            let mut count = 0u32;
+            let init_hi = r.min(w.saturating_sub(1));
+            for x in 0..=init_hi {
+                if let Some(&v) = out.get(row_off + x) {
+                    sum += u32::from(v);
+                    count += 1;
+                }
+            }
             for x in 0..w {
-                let mut sum = 0u32;
-                let mut count = 0u32;
-                let y0 = y.saturating_sub(r);
-                let y1 = (y + r).min(h - 1);
-                let x0 = x.saturating_sub(r);
-                let x1 = (x + r).min(w - 1);
-                for ny in y0..=y1 {
-                    for nx in x0..=x1 {
-                        sum += u32::from(out[ny * w + nx]);
+                if x > 0 && x + r < w {
+                    if let Some(&v) = out.get(row_off + x + r) {
+                        sum += u32::from(v);
                         count += 1;
                     }
                 }
-                blurred[y * w + x] = (sum / count.max(1)) as u8;
+                if x > r {
+                    if let Some(&v) = out.get(row_off + x - r - 1) {
+                        sum = sum.saturating_sub(u32::from(v));
+                        count = count.saturating_sub(1);
+                    }
+                }
+                if let Some(dst) = tmp.get_mut(row_off + x) {
+                    *dst = (sum / count.max(1)) as u8;
+                }
+            }
+        }
+        // Vertical pass
+        let mut blurred = vec![0u8; total];
+        for x in 0..w {
+            let mut sum = 0u32;
+            let mut count = 0u32;
+            let init_hi = r.min(h.saturating_sub(1));
+            for y in 0..=init_hi {
+                if let Some(y_off) = y.checked_mul(w) {
+                    if let Some(&v) = tmp.get(y_off + x) {
+                        sum += u32::from(v);
+                        count += 1;
+                    }
+                }
+            }
+            for y in 0..h {
+                if y > 0 && y + r < h {
+                    if let Some(ny_off) = (y + r).checked_mul(w) {
+                        if let Some(&v) = tmp.get(ny_off + x) {
+                            sum += u32::from(v);
+                            count += 1;
+                        }
+                    }
+                }
+                if y > r {
+                    if let Some(ny_off) = (y - r - 1).checked_mul(w) {
+                        if let Some(&v) = tmp.get(ny_off + x) {
+                            sum = sum.saturating_sub(u32::from(v));
+                            count = count.saturating_sub(1);
+                        }
+                    }
+                }
+                if let Some(y_off) = y.checked_mul(w) {
+                    if let Some(dst) = blurred.get_mut(y_off + x) {
+                        *dst = (sum / count.max(1)) as u8;
+                    }
+                }
             }
         }
         out = blurred;
@@ -329,12 +399,12 @@ pub fn replace_sky_in_buffer(
         return None;
     }
 
-    // 1. Detect sky region
+    // 1. Detect sky region and expand to full canvas mask
     let region = select_sky(sampler, canvas, SkyParams::default())?;
-    let raw_mask = region.mask;
+    let full_raw_mask = region.to_mask_in_rect(canvas);
 
     // 2. Refine mask
-    let mask = refine_sky_mask(&raw_mask, w, h, p.shift_edge, p.fade_edge);
+    let mask = refine_sky_mask(&full_raw_mask, w, h, p.shift_edge, p.fade_edge);
 
     // 3. Render replacement sky
     let sky = render_sky(p.preset, w, h, p);
@@ -344,9 +414,9 @@ pub fn replace_sky_in_buffer(
     let mut result = Vec::with_capacity(w * h);
     for i in 0..w * h {
         let sky_alpha = f32::from(mask.get(i).copied().unwrap_or(0)) / 255.0;
-        let orig_fg = fg_rgb[i];
+        let orig_fg = fg_rgb.get(i).copied().unwrap_or([0.0, 0.0, 0.0]);
         let harmonized_fg = harmonize_pixel(orig_fg, ambient, p.foreground_lighting);
-        let sky_color = sky[i];
+        let sky_color = sky.get(i).copied().unwrap_or([0.0, 0.0, 0.0]);
 
         let r = harmonized_fg[0] * (1.0 - sky_alpha) + sky_color[0] * sky_alpha;
         let g = harmonized_fg[1] * (1.0 - sky_alpha) + sky_color[1] * sky_alpha;
@@ -391,6 +461,23 @@ mod tests {
         // Boundary around row 7-8 should be feathered between 0 and 255
         let mid = refined[8 * 16 + 8];
         assert!(mid < 255, "feathered boundary: {}", mid);
+    }
+
+    #[test]
+    fn refine_mask_handles_mismatched_length() {
+        // Shorter mask than w * h: must not panic, must return w * h
+        let short_mask = vec![255u8; 10];
+        let refined = refine_sky_mask(&short_mask, 16, 16, 10.0, 20.0);
+        assert_eq!(refined.len(), 16 * 16);
+
+        // Longer mask than w * h: must not panic, must return w * h
+        let long_mask = vec![255u8; 1000];
+        let refined_long = refine_sky_mask(&long_mask, 16, 16, -10.0, 10.0);
+        assert_eq!(refined_long.len(), 16 * 16);
+
+        // Empty mask: safe
+        let empty = refine_sky_mask(&[], 16, 16, 0.0, 10.0);
+        assert_eq!(empty.len(), 16 * 16);
     }
 
     #[test]

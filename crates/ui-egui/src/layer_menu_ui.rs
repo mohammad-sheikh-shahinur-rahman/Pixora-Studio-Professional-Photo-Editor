@@ -155,6 +155,13 @@ pub fn show(app: &crate::PhotocraftApp, ui: &mut egui::Ui, l: &Layer, on_set: bo
             ui.close();
         }
         color_menu(app, ui, l, on_set, actions);
+        // A Generative Fill layer's output (AI content) can be reported, with the prompt it was made
+        // from pre-filled (the app stores' rule for generative features). `[panels.rs]` runs the
+        // `ui.reportGeneratedContent` action through [`crate::links::report_generated`].
+        if l.name.starts_with("Generative Fill: ") && ui.button(tl!("Report Generated Content…")).clicked() {
+            ui.close();
+            actions.push(("ui.reportGeneratedContent".into(), json!({"layer": l.id.0})));
+        }
         rename
     })
 }

@@ -151,10 +151,10 @@ fn batch_rename_layers(s: &mut Session, p: &Value) -> Result<Value> {
         for id in &target_ids {
             if let Some(l) = doc.layer_mut(*id) {
                 let mut name = l.name.clone();
-                if let Some(f) = find {
-                    if !f.is_empty() {
-                        name = name.replace(f, replace);
-                    }
+                if let Some(f) = find
+                    && !f.is_empty()
+                {
+                    name = name.replace(f, replace);
                 }
                 if numbering {
                     let num_str = format!("{:0width$}", idx, width = digits);

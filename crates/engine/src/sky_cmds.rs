@@ -6,7 +6,7 @@ use photocraft_algo::segment::Sampler;
 use photocraft_algo::sky_replace::{SkyPreset, SkyReplaceParams, harmonize_pixel, refine_sky_mask, render_sky, sky_ambient_color};
 use photocraft_doc::{Document, Layer, LayerContent, LayerMask};
 use photocraft_geom::Rect;
-use photocraft_raster::Surface;
+use photocraft_raster::{Surface, from_rgba_into, to_rgba};
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;
@@ -90,16 +90,17 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     };
 
     let b = region.bbox;
+    let full_raw_mask = region.to_mask_in_rect(canvas);
 
     // 2. Refine mask (shift edge + fade edge)
-    let refined_mask = refine_sky_mask(&region.mask, w, h, sky_params.shift_edge, sky_params.fade_edge);
+    let refined_mask = refine_sky_mask(&full_raw_mask, w, h, sky_params.shift_edge, sky_params.fade_edge);
 
     // 3. Render replacement sky surface
     let sky_colors = render_sky(sky_params.preset, w, h, &sky_params);
     let ambient = sky_ambient_color(&sky_colors);
 
     // 4. Edit document
-    s.edit("Sky Replacement", |doc, _| {
+    s.edit("Sky Replacement", |doc, active| {
         let fmt = doc.pixel_format();
         let channels = fmt.channels();
 
@@ -111,30 +112,61 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
             let orig_floats = surf.read_region(canvas);
 
             let mut blended = Vec::with_capacity(w * h * channels);
+            let mut enc = vec![0.0f32; channels];
             for (i, &sky_rgb) in sky_colors.iter().enumerate().take(w * h) {
                 let sky_alpha = f32::from(refined_mask.get(i).copied().unwrap_or(0)) / 255.0;
                 let base = i * channels;
-                let orig_r = orig_floats.get(base).copied().unwrap_or(0.0);
-                let orig_g = orig_floats.get(base + 1).copied().unwrap_or(0.0);
-                let orig_b = orig_floats.get(base + 2).copied().unwrap_or(0.0);
-                let orig_a = if channels == 4 { orig_floats.get(base + 3).copied().unwrap_or(1.0) } else { 1.0 };
+                let orig_px = orig_floats.get(base..base + channels).unwrap_or(&[]);
+                let orig_rgba = to_rgba(&fmt, orig_px);
 
-                let fg = harmonize_pixel([orig_r, orig_g, orig_b], ambient, sky_params.foreground_lighting);
+                let fg = harmonize_pixel([orig_rgba[0], orig_rgba[1], orig_rgba[2]], ambient, sky_params.foreground_lighting);
 
                 let r = fg[0] * (1.0 - sky_alpha) + sky_rgb[0] * sky_alpha;
                 let g = fg[1] * (1.0 - sky_alpha) + sky_rgb[1] * sky_alpha;
                 let b = fg[2] * (1.0 - sky_alpha) + sky_rgb[2] * sky_alpha;
+                let a = orig_rgba[3].max(sky_alpha);
 
-                blended.push(r.clamp(0.0, 1.0));
-                blended.push(g.clamp(0.0, 1.0));
-                blended.push(b.clamp(0.0, 1.0));
-                if channels == 4 {
-                    blended.push(orig_a.max(sky_alpha));
-                }
+                from_rgba_into(&fmt, [r.clamp(0.0, 1.0), g.clamp(0.0, 1.0), b.clamp(0.0, 1.0), a], &mut enc);
+                blended.extend_from_slice(&enc);
             }
             surf.write_region(canvas, &blended);
+        } else if output == "duplicateLayer" {
+            let active_layer = doc.layer(active_id).ok_or(EngineError::NoLayer(active_id))?;
+            let mut dup = active_layer.duplicate();
+            if doc.is_background(active_id) {
+                dup.name = "Background Copy".into();
+                dup.locks = Default::default();
+            } else {
+                dup.name = format!("{} Copy", active_layer.name);
+            }
+            if let Some(surf) = dup.surface_mut() {
+                let orig_floats = surf.read_region(canvas);
+                let mut blended = Vec::with_capacity(w * h * channels);
+                let mut enc = vec![0.0f32; channels];
+                for (i, &sky_rgb) in sky_colors.iter().enumerate().take(w * h) {
+                    let sky_alpha = f32::from(refined_mask.get(i).copied().unwrap_or(0)) / 255.0;
+                    let base = i * channels;
+                    let orig_px = orig_floats.get(base..base + channels).unwrap_or(&[]);
+                    let orig_rgba = to_rgba(&fmt, orig_px);
+
+                    let fg = harmonize_pixel([orig_rgba[0], orig_rgba[1], orig_rgba[2]], ambient, sky_params.foreground_lighting);
+
+                    let r = fg[0] * (1.0 - sky_alpha) + sky_rgb[0] * sky_alpha;
+                    let g = fg[1] * (1.0 - sky_alpha) + sky_rgb[1] * sky_alpha;
+                    let b = fg[2] * (1.0 - sky_alpha) + sky_rgb[2] * sky_alpha;
+                    let a = orig_rgba[3].max(sky_alpha);
+
+                    from_rgba_into(&fmt, [r.clamp(0.0, 1.0), g.clamp(0.0, 1.0), b.clamp(0.0, 1.0), a], &mut enc);
+                    blended.extend_from_slice(&enc);
+                }
+                surf.write_region(canvas, &blended);
+            }
+            let dup_id = dup.id;
+            let active_idx = doc.layers.iter().position(|l| l.id == active_id).unwrap_or(0);
+            doc.layers.insert(active_idx + 1, dup);
+            *active = Some(dup_id);
         } else {
-            // "newLayers" or "duplicateLayer": Non-destructive layer creation
+            // "newLayers": Non-destructive layer creation
             crate::extra_cmds::background_to_layer_for_mask(doc, active_id);
 
             // Invert the sky mask so the foreground layer reveals everything except the sky
@@ -146,13 +178,10 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
             // Create sky raster layer
             let mut sky_surf = Surface::new(fmt);
             let mut sky_data = Vec::with_capacity(w * h * channels);
+            let mut enc = vec![0.0f32; channels];
             for &[r, g, b] in &sky_colors {
-                sky_data.push(r);
-                sky_data.push(g);
-                sky_data.push(b);
-                if channels == 4 {
-                    sky_data.push(1.0);
-                }
+                from_rgba_into(&fmt, [r, g, b, 1.0], &mut enc);
+                sky_data.extend_from_slice(&enc);
             }
             sky_surf.write_region(canvas, &sky_data);
 
@@ -212,5 +241,101 @@ mod tests {
         assert_eq!(s.len(), 1);
         assert_eq!(s[0].id, CMD);
         assert_eq!(s[0].menu, &["Edit"]);
+    }
+
+    #[test]
+    fn sky_replacement_new_layers_on_background_succeeds() {
+        let mut s = Session::new();
+        let w = 64;
+        let h = 64;
+        let mut doc = Document::new("Sky Test", photocraft_geom::Size::new(w, h), photocraft_color::ColorMode::Rgb, photocraft_color::SampleType::U8);
+        let mut surf = Surface::new(doc.pixel_format());
+        let mut px = Vec::with_capacity((w * h * 4) as usize);
+        let horizon = h / 2;
+        for y in 0..h {
+            for _x in 0..w {
+                if y < horizon {
+                    px.extend_from_slice(&[0.2, 0.5, 0.95, 1.0]);
+                } else {
+                    px.extend_from_slice(&[0.2, 0.2, 0.1, 1.0]);
+                }
+            }
+        }
+        surf.write_region(doc.bounds(), &px);
+        let mut bg = Layer::new("Background", LayerContent::Raster(surf));
+        bg.locks.transparency = true;
+        bg.locks.position = true;
+        doc.layers.push(bg);
+        s.add_document(doc, None);
+
+        let res = s.execute(CMD, json!({"output": "newLayers", "preset": "blueSky"}));
+        assert!(res.is_ok(), "Sky replacement failed: {:?}", res);
+        let d = s.active().unwrap();
+        assert_eq!(d.doc.layers.len(), 2);
+        assert!(d.doc.layers[0].name.starts_with("Sky:"));
+        let fg_layer = &d.doc.layers[1];
+        assert_eq!(fg_layer.name, "Layer 0");
+        assert!(fg_layer.mask.is_some(), "Foreground layer must have a mask");
+    }
+
+    #[test]
+    fn sky_replacement_duplicate_layer_succeeds() {
+        let mut s = Session::new();
+        let w = 64;
+        let h = 64;
+        let mut doc = Document::new("Sky Test", photocraft_geom::Size::new(w, h), photocraft_color::ColorMode::Rgb, photocraft_color::SampleType::U8);
+        let mut surf = Surface::new(doc.pixel_format());
+        let mut px = Vec::with_capacity((w * h * 4) as usize);
+        for y in 0..h {
+            for _x in 0..w {
+                if y < h / 2 {
+                    px.extend_from_slice(&[0.2, 0.5, 0.95, 1.0]);
+                } else {
+                    px.extend_from_slice(&[0.2, 0.2, 0.1, 1.0]);
+                }
+            }
+        }
+        surf.write_region(doc.bounds(), &px);
+        let mut bg = Layer::new("Background", LayerContent::Raster(surf));
+        bg.locks.transparency = true;
+        bg.locks.position = true;
+        doc.layers.push(bg);
+        s.add_document(doc, None);
+
+        let res = s.execute(CMD, json!({"output": "duplicateLayer", "preset": "sunset"}));
+        assert!(res.is_ok(), "Duplicate layer sky replacement failed: {:?}", res);
+        let d = s.active().unwrap();
+        assert_eq!(d.doc.layers.len(), 2);
+        assert_eq!(d.doc.layers[1].name, "Background Copy");
+    }
+
+    #[test]
+    fn sky_replacement_active_layer_succeeds() {
+        let mut s = Session::new();
+        let w = 64;
+        let h = 64;
+        let mut doc = Document::new("Sky Test", photocraft_geom::Size::new(w, h), photocraft_color::ColorMode::Rgb, photocraft_color::SampleType::U8);
+        let mut surf = Surface::new(doc.pixel_format());
+        let mut px = Vec::with_capacity((w * h * 4) as usize);
+        for y in 0..h {
+            for _x in 0..w {
+                if y < h / 2 {
+                    px.extend_from_slice(&[0.2, 0.5, 0.95, 1.0]);
+                } else {
+                    px.extend_from_slice(&[0.2, 0.2, 0.1, 1.0]);
+                }
+            }
+        }
+        surf.write_region(doc.bounds(), &px);
+        let mut bg = Layer::new("Background", LayerContent::Raster(surf));
+        bg.locks.transparency = true;
+        bg.locks.position = true;
+        doc.layers.push(bg);
+        s.add_document(doc, None);
+
+        let res = s.execute(CMD, json!({"output": "activeLayer", "preset": "dramatic"}));
+        assert!(res.is_ok(), "Active layer sky replacement failed: {:?}", res);
+        let d = s.active().unwrap();
+        assert_eq!(d.doc.layers.len(), 1);
     }
 }

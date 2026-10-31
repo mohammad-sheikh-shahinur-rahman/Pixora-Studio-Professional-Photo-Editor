@@ -250,6 +250,41 @@ impl Region {
         let value = row.and_then(|i| i.checked_add(x.abs_diff(self.bbox.x0) as usize)).and_then(|i| self.mask.get(i)).copied().unwrap_or(0);
         f32::from(value) / 255.0
     }
+
+    /// Expands or extracts the region's 8-bit coverage mask into `area`, returning
+    /// a full-size `w * h` buffer where pixels outside `self.bbox` are 0.
+    pub fn to_mask_in_rect(&self, area: Rect) -> Vec<u8> {
+        let w = usize::try_from(area.width().max(0)).unwrap_or(0);
+        let h = usize::try_from(area.height().max(0)).unwrap_or(0);
+        let total_px = w.saturating_mul(h);
+        let mut out = vec![0u8; total_px];
+        let inter = self.bbox.intersect(&area);
+        if inter.is_empty() {
+            return out;
+        }
+        let src_w = usize::try_from(self.bbox.width().max(0)).unwrap_or(0);
+        let inter_w = usize::try_from(inter.width().max(0)).unwrap_or(0);
+        if src_w == 0 || inter_w == 0 || w == 0 {
+            return out;
+        }
+        for y in inter.y0..inter.y1 {
+            let Ok(sy) = usize::try_from(y.saturating_sub(self.bbox.y0)) else { continue };
+            let Ok(dy) = usize::try_from(y.saturating_sub(area.y0)) else { continue };
+            let Ok(sx_off) = usize::try_from(inter.x0.saturating_sub(self.bbox.x0)) else { continue };
+            let Ok(dx_off) = usize::try_from(inter.x0.saturating_sub(area.x0)) else { continue };
+            let src_row = sy.checked_mul(src_w).and_then(|r| r.checked_add(sx_off));
+            let dst_row = dy.checked_mul(w).and_then(|r| r.checked_add(dx_off));
+            if let (Some(s_off), Some(d_off)) = (src_row, dst_row) {
+                if let (Some(src), Some(dst)) = (
+                    self.mask.get(s_off..s_off + inter_w),
+                    out.get_mut(d_off..d_off + inter_w),
+                ) {
+                    dst.copy_from_slice(src);
+                }
+            }
+        }
+        out
+    }
 }
 
 /// Magic wand on 8-bit pixels: a scanline flood fill (or a global match) that only allocates a
@@ -898,6 +933,31 @@ pub fn polygon(points: &[(f32, f32)], area: Rect, anti_alias: bool) -> Vec<f32> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn region_to_mask_in_rect_places_and_clips() {
+        let r = Region {
+            bbox: Rect::new(2, 2, 6, 6),
+            mask: vec![255u8; 16],
+        };
+        // Canvas larger than region
+        let canvas = Rect::new(0, 0, 10, 10);
+        let mask = r.to_mask_in_rect(canvas);
+        assert_eq!(mask.len(), 100);
+        // Pixels outside bbox are 0
+        assert_eq!(mask[0], 0);
+        assert_eq!(mask[10 * 1 + 1], 0);
+        // Pixels inside bbox are 255
+        assert_eq!(mask[10 * 2 + 2], 255);
+        assert_eq!(mask[10 * 5 + 5], 255);
+        assert_eq!(mask[10 * 6 + 6], 0);
+
+        // Canvas disjoint
+        let disjoint = Rect::new(20, 20, 30, 30);
+        let dis_mask = r.to_mask_in_rect(disjoint);
+        assert_eq!(dis_mask.len(), 100);
+        assert!(dis_mask.iter().all(|&v| v == 0));
+    }
 
     fn img(w: usize, h: usize, f: impl Fn(usize, usize) -> [f32; 4]) -> Vec<[f32; 4]> {
         (0..h).flat_map(|y| (0..w).map(move |x| (x, y))).map(|(x, y)| f(x, y)).collect()

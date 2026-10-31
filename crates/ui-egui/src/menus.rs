@@ -1085,11 +1085,13 @@ pub fn menu_items(app: &PhotocraftApp) -> Vec<MenuItem> {
             items.insert(after + 1 + k, it);
         }
     }
-    // Keep the update command with the links, ahead of System Info and About.
-    if let Some(at) = items.iter().position(|i| i.id == "help.checkForUpdates") {
-        let update = items.remove(at);
-        let before = items.iter().position(|i| i.id == "help.systemInfo" || i.id == "help.about").unwrap_or(items.len());
-        items.insert(before, update);
+    // Keep the update command and the issue report with the links, ahead of System Info and About.
+    for link_id in ["help.checkForUpdates", "help.reportIssue"] {
+        if let Some(at) = items.iter().position(|i| i.id == link_id) {
+            let link = items.remove(at);
+            let before = items.iter().position(|i| i.id == "help.systemInfo" || i.id == "help.about").unwrap_or(items.len());
+            items.insert(before, link);
+        }
     }
     // Help: if update check is ahead of System Info and About, place a separator.
     let at_help = items.iter().position(|i| i.id == "help.systemInfo" || i.id == "help.about");

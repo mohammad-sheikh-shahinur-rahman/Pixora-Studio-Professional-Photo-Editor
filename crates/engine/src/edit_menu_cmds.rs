@@ -386,10 +386,11 @@ fn try_ai_generate(prompt: &str, w: u32, h: u32) -> Option<std::path::PathBuf> {
             .arg("--width").arg(w.clamp(256, 1920).to_string())
             .arg("--height").arg(h.clamp(256, 1920).to_string())
             .arg("--out").arg(&out_path);
-        if let Ok(status) = cmd.status() {
-            if status.success() && out_path.exists() {
-                return Some(out_path);
-            }
+        if let Ok(status) = cmd.status()
+            && status.success()
+            && out_path.exists()
+        {
+            return Some(out_path);
         }
     }
     None
@@ -408,8 +409,8 @@ fn generative_fill(s: &mut Session, p: &Value) -> Result<Value> {
 
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
     let canvas = doc.bounds();
-    let cw = canvas.width() as u32;
-    let ch = canvas.height() as u32;
+    let cw = canvas.width();
+    let ch = canvas.height();
     let has_sel = doc.selection.as_ref().is_some_and(|m| !m.content_bounds().is_empty());
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -458,16 +459,16 @@ fn generative_fill(s: &mut Session, p: &Value) -> Result<Value> {
         "seed": seed,
     });
     let r = content_aware_fill_as(s, &caf_params, "edit.generativeFill", "Generative Fill")?;
-    if !prompt.is_empty() {
-        if let Some(lid) = r.get("layer").and_then(Value::as_u64) {
-            let p_clone = prompt.clone();
-            let _ = s.edit("Rename Generative Fill", |doc, _| {
-                if let Some(l) = doc.layer_mut(LayerId(lid)) {
-                    l.name = format!("Generative Fill: {p_clone}");
-                }
-                Ok(())
-            });
-        }
+    if !prompt.is_empty()
+        && let Some(lid) = r.get("layer").and_then(Value::as_u64)
+    {
+        let p_clone = prompt.clone();
+        let _ = s.edit("Rename Generative Fill", |doc, _| {
+            if let Some(l) = doc.layer_mut(LayerId(lid)) {
+                l.name = format!("Generative Fill: {p_clone}");
+            }
+            Ok(())
+        });
     }
     Ok(json!({
         "layer": r.get("layer"),
