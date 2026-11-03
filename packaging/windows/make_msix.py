@@ -7,11 +7,27 @@ from PIL import Image
 ROOT = os.path.abspath(".")
 STAGE = os.path.join(ROOT, "dist", "msix-stage")
 ASSETS = os.path.join(STAGE, "Assets")
-BIN_SRC = os.path.join(ROOT, "target", "x86_64-pc-windows-msvc", "release")
-if not os.path.exists(os.path.join(BIN_SRC, "pixora-studio.exe")):
-    BIN_SRC = os.path.join(ROOT, "target", "release")
+# Locate the newest compiled release binaries
+candidate_dirs = [
+    os.path.join(ROOT, "target", "release"),
+    os.path.join(ROOT, "target", "x86_64-pc-windows-msvc", "release"),
+]
+BIN_SRC = None
+latest_mtime = -1
+for d in candidate_dirs:
+    exe = os.path.join(d, "pixora-studio.exe")
+    if os.path.isfile(exe):
+        mtime = os.path.getmtime(exe)
+        if mtime > latest_mtime:
+            latest_mtime = mtime
+            BIN_SRC = d
+
+if not BIN_SRC:
+    raise FileNotFoundError("Could not find compiled pixora-studio.exe in target/release")
+
+print(f"Using binaries from: {BIN_SRC} (last modified {latest_mtime})")
 DIST = os.path.join(ROOT, "dist", "release")
-OUT_MSIX = os.path.join(DIST, "pixora-studio-0.15.3.0-windows-x64.msix")
+OUT_MSIX = os.path.join(DIST, "pixora-studio-0.15.4.0-windows-x64.msix")
 KIT_BIN = r"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64"
 MAKEAPPX = os.path.join(KIT_BIN, "makeappx.exe")
 MAKEPRI = os.path.join(KIT_BIN, "makepri.exe")
@@ -74,7 +90,7 @@ manifest = """<?xml version="1.0" encoding="utf-8"?>
   <Identity
     Name="ITAmadersomajInc.PixoraStudio"
     Publisher="CN=88BD5184-3CC3-4CE2-BC26-1D0DF54D2A8E"
-    Version="0.15.3.0"
+    Version="0.15.4.0"
     ProcessorArchitecture="x64" />
 
   <Properties>
